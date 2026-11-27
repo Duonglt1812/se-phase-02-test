@@ -46,7 +46,8 @@ class AccountController {
 
 	@PostMapping("/api/auth/register")
 	@Operation(summary = "Register a customer account", description = "Public self-registration creates a CUSTOMER account. "
-		+ "Email addresses are normalized; an existing email returns 409. The password must contain at least 8 characters.")
+		+ "Email addresses are normalized; an existing email returns 409. The password must contain at least 8 characters "
+		+ "and at most 72 UTF-8 bytes.")
 	@ResponseStatus(HttpStatus.CREATED)
 	@ApiResponse(responseCode = "400", description = "The request contains invalid fields.",
 		content = @Content(mediaType = "application/problem+json",
@@ -119,7 +120,7 @@ class AccountController {
 			example = "alice@example.com") String email,
 		@NotBlank(message = "Password is required")
 		@Size(min = 8, message = "Password must be at least 8 characters") @RegistrationPasswordLimit
-		@Schema(description = "Password with a minimum length of 8 characters.", minLength = 8,
+		@Schema(description = "Password with a minimum length of 8 characters and at most 72 UTF-8 bytes.", minLength = 8,
 			example = "correctHorseBatteryStaple") String password,
 		@NotBlank(message = "Full name is required") @Size(max = 255, message = "Full name is not allowed")
 		@Schema(description = "Customer's nonblank full name.", minLength = 1, example = "Alice Nguyen") String fullName) {

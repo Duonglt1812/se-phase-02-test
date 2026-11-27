@@ -1,2596 +1,2601 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Cinema Booking API",
-    "description": "Cinema chain backend: catalogue management and seat booking.",
-    "version": "v1"
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "Cinema Booking API",
+    "description" : "Cinema chain backend: catalogue management and seat booking.",
+    "version" : "v1"
   },
-  "servers": [
-    {
-      "url": "http://localhost:8080",
-      "description": "Generated server url"
-    }
-  ],
-  "tags": [
-    {
-      "name": "Accounts",
-      "description": "Customer registration, login, token refresh, logout, and the authenticated account."
-    },
-    {
-      "name": "Movies",
-      "description": "Movie catalogue management and public movie reads."
-    },
-    {
-      "name": "Bookings",
-      "description": "Customer-owned seat holds, payment, and booking retrieval."
-    },
-    {
-      "name": "Cinemas",
-      "description": "Cinema catalogue management and public cinema reads."
-    },
-    {
-      "name": "Auditoriums",
-      "description": "Cinema auditoriums, seat layouts, and public seat reads."
-    },
-    {
-      "name": "Showtimes",
-      "description": "Scheduled screenings, cancellation, and public seat availability."
-    }
-  ],
-  "paths": {
-    "/api/movies/{id}": {
-      "get": {
-        "tags": [
-          "Movies"
-        ],
-        "summary": "Get a movie",
-        "description": "Returns one movie by UUID. This read is public; an unknown movie returns 404.",
-        "operationId": "get",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Movie UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440002"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/MovieResponse"
+  "servers" : [ {
+    "url" : "http://localhost:8080",
+    "description" : "Generated server url"
+  } ],
+  "tags" : [ {
+    "name" : "Movies",
+    "description" : "Movie catalogue management and public movie reads."
+  }, {
+    "name" : "Bookings",
+    "description" : "Customer-owned seat holds, payment, and booking retrieval."
+  }, {
+    "name" : "Cinemas",
+    "description" : "Cinema catalogue management and public cinema reads."
+  }, {
+    "name" : "Accounts",
+    "description" : "Customer registration, login, token refresh, logout, and the authenticated account."
+  }, {
+    "name" : "Auditoriums",
+    "description" : "Cinema auditoriums, seat layouts, and public seat reads."
+  }, {
+    "name" : "Showtimes",
+    "description" : "Scheduled screenings, cancellation, and public seat availability."
+  } ],
+  "paths" : {
+    "/api/movies/{id}" : {
+      "get" : {
+        "tags" : [ "Movies" ],
+        "summary" : "Get a movie",
+        "description" : "Returns one movie by UUID. This read is public; an unknown movie returns 404.",
+        "operationId" : "get",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Movie UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440002"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MovieResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       },
-      "put": {
-        "tags": [
-          "Movies"
-        ],
-        "summary": "Update a movie",
-        "description": "Replaces the movie's catalogue fields. A missing movie returns 404. Requires ADMIN.",
-        "operationId": "update",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Movie UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440002"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MovieRequest"
+      "put" : {
+        "tags" : [ "Movies" ],
+        "summary" : "Update a movie",
+        "description" : "Replaces the movie's catalogue fields. A missing movie returns 404. Requires ADMIN.",
+        "operationId" : "update",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Movie UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440002"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MovieRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/MovieResponse"
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MovieResponse"
                 }
               }
             }
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       },
-      "delete": {
-        "tags": [
-          "Movies"
-        ],
-        "summary": "Delete a movie",
-        "description": "Hard-deletes a movie only when it has no showtimes. Requires ADMIN; an unknown movie returns 404 and dependent showtimes cause 409.",
-        "operationId": "delete",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Movie UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440002"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
+      "delete" : {
+        "tags" : [ "Movies" ],
+        "summary" : "Delete a movie",
+        "description" : "Hard-deletes a movie only when it has no showtimes. Requires ADMIN; an unknown movie returns 404 and dependent showtimes cause 409.",
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Movie UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "example" : "550e8400-e29b-41d4-a716-446655440002"
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/cinemas/{id}": {
-      "get": {
-        "tags": [
-          "Cinemas"
-        ],
-        "summary": "Get a cinema",
-        "description": "Returns one cinema by UUID. The read is public; an unknown cinema returns 404.",
-        "operationId": "get_1",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Cinema UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440001"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/CinemaResponse"
+    "/api/cinemas/{id}" : {
+      "get" : {
+        "tags" : [ "Cinemas" ],
+        "summary" : "Get a cinema",
+        "description" : "Returns one cinema by UUID. The read is public; an unknown cinema returns 404.",
+        "operationId" : "get_1",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Cinema UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440001"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CinemaResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       },
-      "put": {
-        "tags": [
-          "Cinemas"
-        ],
-        "summary": "Update a cinema",
-        "description": "Replaces a cinema's name and address. The cinema must exist; a missing cinema returns 404. Requires ADMIN.",
-        "operationId": "update_1",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Cinema UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440001"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CinemaRequest"
+      "put" : {
+        "tags" : [ "Cinemas" ],
+        "summary" : "Update a cinema",
+        "description" : "Replaces a cinema's name and address. The cinema must exist; a missing cinema returns 404. Requires ADMIN.",
+        "operationId" : "update_1",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Cinema UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440001"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CinemaRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/CinemaResponse"
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CinemaResponse"
                 }
               }
             }
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       },
-      "delete": {
-        "tags": [
-          "Cinemas"
-        ],
-        "summary": "Delete a cinema",
-        "description": "Hard-deletes a cinema that has no auditoriums. An authenticated ADMIN role is required; a missing cinema returns 404 and existing auditoriums cause 409.",
-        "operationId": "delete_1",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Cinema UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440001"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
+      "delete" : {
+        "tags" : [ "Cinemas" ],
+        "summary" : "Delete a cinema",
+        "description" : "Hard-deletes a cinema that has no auditoriums. An authenticated ADMIN role is required; a missing cinema returns 404 and existing auditoriums cause 409.",
+        "operationId" : "delete_1",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Cinema UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "example" : "550e8400-e29b-41d4-a716-446655440001"
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/showtimes": {
-      "get": {
-        "tags": [
-          "Showtimes"
-        ],
-        "summary": "List showtimes for a date",
-        "description": "Returns non-cancelled showtimes starting on the given Vietnam local calendar date. The date is required; cinemaId and movieId optionally filter the results. This read is public.",
-        "operationId": "list",
-        "parameters": [
-          {
-            "name": "date",
-            "in": "query",
-            "description": "Required Vietnam local date, interpreted from 00:00 to 24:00.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "example": "2026-05-01"
+    "/api/showtimes" : {
+      "get" : {
+        "tags" : [ "Showtimes" ],
+        "summary" : "List showtimes for a date",
+        "description" : "Returns non-cancelled showtimes starting on the given Vietnam local calendar date. The date is required; cinemaId and movieId optionally filter the results. This read is public.",
+        "operationId" : "list",
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "query",
+          "description" : "Required Vietnam local date, interpreted from 00:00 to 24:00.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
           },
-          {
-            "name": "cinemaId",
-            "in": "query",
-            "description": "Optional cinema UUID filter.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440001"
+          "example" : "2026-05-01"
+        }, {
+          "name" : "cinemaId",
+          "in" : "query",
+          "description" : "Optional cinema UUID filter.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          {
-            "name": "movieId",
-            "in": "query",
-            "description": "Optional movie UUID filter.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440002"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ShowtimeResponse"
+          "example" : "550e8400-e29b-41d4-a716-446655440001"
+        }, {
+          "name" : "movieId",
+          "in" : "query",
+          "description" : "Optional movie UUID filter.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440002"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ShowtimeResponse"
                   }
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       },
-      "post": {
-        "tags": [
-          "Showtimes"
-        ],
-        "summary": "Create a showtime",
-        "description": "Schedules a movie in an auditorium. End time is fixed at creation as movie duration plus 15 minutes for cleaning; screenings in the same auditorium cannot overlap. Base price is a positive VND amount. Missing movie/auditorium returns 404 and an overlap returns 409. Requires ADMIN.",
-        "operationId": "create",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ShowtimeRequest"
+      "post" : {
+        "tags" : [ "Showtimes" ],
+        "summary" : "Create a showtime",
+        "description" : "Schedules a movie in an auditorium. End time is fixed at creation as movie duration plus 15 minutes for cleaning; screenings in the same auditorium cannot overlap. Base price is a positive VND amount. Missing movie/auditorium returns 404 and an overlap returns 409. Requires ADMIN.",
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ShowtimeRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ShowtimeResponse"
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/showtimes/{id}/cancellation": {
-      "post": {
-        "tags": [
-          "Showtimes"
-        ],
-        "summary": "Cancel a showtime",
-        "description": "Cancels a showtime until its endsAt. A reason is required; OTHER requires a nonblank note of at most 200 characters. Confirmed bookings are refunded and Pending bookings removed. An unknown showtime returns 404; a cancelled or ended showtime returns 409. Requires ADMIN.",
-        "operationId": "cancel",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Showtime UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440010"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancellationRequest"
+    "/api/showtimes/{id}/cancellation" : {
+      "post" : {
+        "tags" : [ "Showtimes" ],
+        "summary" : "Cancel a showtime",
+        "description" : "Cancels a showtime until its endsAt. A reason is required; OTHER requires a nonblank note of at most 200 characters. Confirmed bookings are refunded and Pending bookings removed. An unknown showtime returns 404; a cancelled or ended showtime returns 409. Requires ADMIN.",
+        "operationId" : "cancel",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Showtime UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440010"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CancellationRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ShowtimeResponse"
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/movies": {
-      "get": {
-        "tags": [
-          "Movies"
-        ],
-        "summary": "List movies",
-        "description": "Returns all movies in the catalogue. This read is public; a supplied invalid bearer token is rejected.",
-        "operationId": "list_1",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MovieResponse"
+    "/api/movies" : {
+      "get" : {
+        "tags" : [ "Movies" ],
+        "summary" : "List movies",
+        "description" : "Returns a page of movies ordered by title. Defaults to page=0 and size=20 (max 100); totals are returned in X-Total-Count, X-Page, X-Page-Size, and X-Total-Pages headers. This read is public; a supplied invalid bearer token is rejected.",
+        "operationId" : "list_1",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "description" : "Zero-based page index.",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "default" : 0,
+            "maximum" : 100000,
+            "minimum" : 0
+          },
+          "example" : 0
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "description" : "Maximum number of items per page (1-100).",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "default" : 20,
+            "maximum" : 100,
+            "minimum" : 1
+          },
+          "example" : 20
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/MovieResponse"
                   }
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       },
-      "post": {
-        "tags": [
-          "Movies"
-        ],
-        "summary": "Create a movie",
-        "description": "Adds a movie to the catalogue. Duration must be positive; age rating is descriptive only. Requires ADMIN.",
-        "operationId": "create_1",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MovieRequest"
+      "post" : {
+        "tags" : [ "Movies" ],
+        "summary" : "Create a movie",
+        "description" : "Adds a movie to the catalogue. Duration must be positive; age rating is descriptive only. Requires ADMIN.",
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MovieRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/MovieResponse"
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MovieResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/cinemas": {
-      "get": {
-        "tags": [
-          "Cinemas"
-        ],
-        "summary": "List cinemas",
-        "description": "Returns all cinemas. This catalogue read is public; a supplied invalid bearer token is rejected.",
-        "operationId": "list_2",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CinemaResponse"
+    "/api/cinemas" : {
+      "get" : {
+        "tags" : [ "Cinemas" ],
+        "summary" : "List cinemas",
+        "description" : "Returns a page of cinemas ordered by name. Defaults to page=0 and size=20 (max 100); totals are returned in X-Total-Count, X-Page, X-Page-Size, and X-Total-Pages headers. This catalogue read is public; a supplied invalid bearer token is rejected.",
+        "operationId" : "list_2",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "description" : "Zero-based page index.",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "default" : 0,
+            "maximum" : 100000,
+            "minimum" : 0
+          },
+          "example" : 0
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "description" : "Maximum number of items per page (1-100).",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "default" : 20,
+            "maximum" : 100,
+            "minimum" : 1
+          },
+          "example" : 20
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/CinemaResponse"
                   }
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       },
-      "post": {
-        "tags": [
-          "Cinemas"
-        ],
-        "summary": "Create a cinema",
-        "description": "Creates a cinema. The name and address must be nonblank; an authenticated ADMIN role is required.",
-        "operationId": "create_2",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CinemaRequest"
+      "post" : {
+        "tags" : [ "Cinemas" ],
+        "summary" : "Create a cinema",
+        "description" : "Creates a cinema. The name and address must be nonblank; an authenticated ADMIN role is required.",
+        "operationId" : "create_2",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CinemaRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/CinemaResponse"
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CinemaResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/cinemas/{id}/auditoriums": {
-      "get": {
-        "tags": [
-          "Auditoriums"
-        ],
-        "summary": "List a cinema's auditoriums",
-        "description": "Returns auditorium summaries for an existing cinema; seat details are omitted. Missing cinema returns 404. This catalogue read is public.",
-        "operationId": "list_3",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Cinema UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440001"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AuditoriumResponse"
+    "/api/cinemas/{id}/auditoriums" : {
+      "get" : {
+        "tags" : [ "Auditoriums" ],
+        "summary" : "List a cinema's auditoriums",
+        "description" : "Returns auditorium summaries for an existing cinema; seat details are omitted. Missing cinema returns 404. This catalogue read is public.",
+        "operationId" : "list_3",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Cinema UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440001"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AuditoriumResponse"
                   }
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       },
-      "post": {
-        "tags": [
-          "Auditoriums"
-        ],
-        "summary": "Create an auditorium",
-        "description": "Creates an auditorium under an existing cinema. Its name must be unique within that cinema. Rows are A\u00e2\u20ac\u201cZ (1\u00e2\u20ac\u201c26); each row has a positive seat count. VIP and couple rows must refer to distinct valid row letters. Missing cinema returns 404 and a duplicate name returns 409. Requires ADMIN.",
-        "operationId": "create_3",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Owning cinema UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440001"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AuditoriumRequest"
+      "post" : {
+        "tags" : [ "Auditoriums" ],
+        "summary" : "Create an auditorium",
+        "description" : "Creates an auditorium under an existing cinema. Its name must be unique within that cinema. Rows are A-Z (1-26); each row has a positive seat count. VIP and couple rows must refer to distinct valid row letters. Missing cinema returns 404 and a duplicate name returns 409. Requires ADMIN.",
+        "operationId" : "create_3",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Owning cinema UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440001"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AuditoriumRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuditoriumResponse"
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditoriumResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/bookings": {
-      "get": {
-        "tags": [
-          "Bookings"
-        ],
-        "summary": "List my bookings",
-        "description": "Returns only the authenticated customer's bookings, newest first. Requires CUSTOMER.",
-        "operationId": "list_4",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BookingResponse"
+    "/api/bookings" : {
+      "get" : {
+        "tags" : [ "Bookings" ],
+        "summary" : "List my bookings",
+        "description" : "Returns a page of the authenticated customer's bookings, newest first. Defaults to page=0 and size=20 (max 100); totals are returned in X-Total-Count, X-Page, X-Page-Size, and X-Total-Pages headers. Requires CUSTOMER.",
+        "operationId" : "list_4",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "description" : "Zero-based page index.",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "default" : 0,
+            "maximum" : 100000,
+            "minimum" : 0
+          },
+          "example" : 0
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "description" : "Maximum number of items per page (1-100).",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "default" : 20,
+            "maximum" : 100,
+            "minimum" : 1
+          },
+          "example" : 20
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BookingResponse"
                   }
                 }
               }
             }
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       },
-      "post": {
-        "tags": [
-          "Bookings"
-        ],
-        "summary": "Book seats",
-        "description": "Creates a 10-minute Pending hold for 1\u00e2\u20ac\u201c8 unique seats in a future, non-cancelled showtime. Customers can have at most one live Pending booking; taken seats, cancelled/started showtimes, or an existing hold cause 409. Duplicate IDs or seats outside its auditorium are 400; an unknown showtime is 404. Requires CUSTOMER.",
-        "operationId": "book",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BookingRequest"
+      "post" : {
+        "tags" : [ "Bookings" ],
+        "summary" : "Book seats",
+        "description" : "Creates a 10-minute Pending hold for 1-8 unique seats in a future, non-cancelled showtime. Customers can have at most one live Pending booking; taken seats, cancelled/started showtimes, or an existing hold cause 409. Duplicate IDs or seats outside its auditorium are 400; an unknown showtime is 404. Requires CUSTOMER.",
+        "operationId" : "book",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BookingRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/BookingResponse"
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/bookings/{id}/payment": {
-      "post": {
-        "tags": [
-          "Bookings"
-        ],
-        "summary": "Pay for my booking",
-        "description": "Simulates payment for a live Pending booking. An expired hold returns 409; retrying payment for an already Confirmed booking returns it unchanged. Missing or another customer's booking returns 404. Requires CUSTOMER.",
-        "operationId": "pay",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Booking UUID owned by the authenticated customer.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440030"
+    "/api/bookings/{id}/payment" : {
+      "post" : {
+        "tags" : [ "Bookings" ],
+        "summary" : "Pay for my booking",
+        "description" : "Simulates payment for a live Pending booking. Supports an optional Idempotency-Key header so retried or concurrent requests return the same result without creating a duplicate transaction; reusing a key on a different booking returns 409. An expired hold returns 409; retrying payment for an already Confirmed booking returns it unchanged. Missing or another customer's booking returns 404. Requires CUSTOMER.",
+        "operationId" : "pay",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Booking UUID owned by the authenticated customer.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Optional client-generated idempotency key (1–128 characters) to safely retry payment.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128
-            },
-            "example": "pay-550e8400-e29b-41d4-a716-446655440030"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/BookingResponse"
+          "example" : "550e8400-e29b-41d4-a716-446655440030"
+        }, {
+          "name" : "Idempotency-Key",
+          "in" : "header",
+          "description" : "Optional client-generated idempotency key (1-128 characters) to safely retry payment.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 128,
+            "minLength" : 1
+          },
+          "example" : "pay-550e8400-e29b-41d4-a716-446655440030"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/auth/register": {
-      "post": {
-        "tags": [
-          "Accounts"
-        ],
-        "summary": "Register a customer account",
-        "description": "Public self-registration creates a CUSTOMER account. Email addresses are normalized; an existing email returns 409. The password must contain at least 8 characters.",
-        "operationId": "register",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterRequest"
+    "/api/auth/register" : {
+      "post" : {
+        "tags" : [ "Accounts" ],
+        "summary" : "Register a customer account",
+        "description" : "Public self-registration creates a CUSTOMER account. Email addresses are normalized; an existing email returns 409. The password must contain at least 8 characters and at most 72 UTF-8 bytes.",
+        "operationId" : "register",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegisterRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "400": {
-            "description": "The request contains invalid fields.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationProblem"
+        "responses" : {
+          "400" : {
+            "description" : "The request contains invalid fields.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationProblem"
                 },
-                "examples": {
-                  "Invalid registration fields": {
-                    "description": "Invalid registration fields",
-                    "value": {
-                      "type": "about:blank",
-                      "title": "Bad Request",
-                      "status": 400,
-                      "detail": "Request validation failed.",
-                      "errors": [
-                        {
-                          "field": "password",
-                          "message": "Password must be at least 8 characters"
-                        }
-                      ]
+                "examples" : {
+                  "Invalid registration fields" : {
+                    "description" : "Invalid registration fields",
+                    "value" : {
+                      "type" : "about:blank",
+                      "title" : "Bad Request",
+                      "status" : 400,
+                      "detail" : "Request validation failed.",
+                      "errors" : [ {
+                        "field" : "password",
+                        "message" : "Password must be at least 8 characters"
+                      } ]
                     }
                   }
                 }
               }
             }
           },
-          "201": {
-            "description": "Created",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/AccountResponse"
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       }
     },
-    "/api/auth/login": {
-      "post": {
-        "tags": [
-          "Accounts"
-        ],
-        "summary": "Log in",
-        "description": "Public login authenticates with email and password and returns a short-lived Bearer access token (default 15 minutes) and a revocable rotating refresh token. Unknown email and wrong password share the same 401 response; login applies only nonblank validation.",
-        "operationId": "login",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginRequest"
+    "/api/auth/refresh" : {
+      "post" : {
+        "tags" : [ "Accounts" ],
+        "summary" : "Refresh access token",
+        "description" : "Public endpoint that exchanges an active refresh token for a new short-lived Bearer access token and a rotated refresh token. Presenting an unknown, expired, or revoked refresh token returns 401; replaying an already-used refresh token also revokes its entire token family.",
+        "operationId" : "refresh",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RefreshRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TokenResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "400": {
-            "$ref": "#/components/responses/LoginBadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       }
     },
-    "/api/auth/refresh": {
-      "post": {
-        "tags": [
-          "Accounts"
-        ],
-        "summary": "Refresh access token",
-        "description": "Public endpoint that exchanges an active refresh token for a new short-lived Bearer access token and a rotated refresh token. Presenting an unknown, expired, or revoked refresh token returns 401; replaying an already-used refresh token also revokes its entire token family.",
-        "operationId": "refresh",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshRequest"
+    "/api/auth/logout" : {
+      "post" : {
+        "tags" : [ "Accounts" ],
+        "summary" : "Log out",
+        "description" : "Revokes the caller's current Bearer access token by adding it to the token blacklist so further requests using that token fail with 401, and revokes the refresh token family linked to the access token. If an additional refreshToken belonging to the caller is supplied in the optional request body, its refresh token family is also revoked.",
+        "operationId" : "logout",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LogoutRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/auth/login" : {
+      "post" : {
+        "tags" : [ "Accounts" ],
+        "summary" : "Log in",
+        "description" : "Public login authenticates with email and password and returns a short-lived Bearer access token (default 15 minutes) and a revocable rotating refresh token. Unknown email and wrong password share the same 401 response; login applies only nonblank validation.",
+        "operationId" : "login",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LoginRequest"
               }
             }
           },
-          "required": true
+          "required" : true
         },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TokenResponse"
                 }
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "400" : {
+            "$ref" : "#/components/responses/LoginBadRequest"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       }
     },
-    "/api/auth/logout": {
-      "post": {
-        "tags": [
-          "Accounts"
-        ],
-        "summary": "Log out",
-        "description": "Revokes the caller's current Bearer access token by adding it to the token blacklist so further requests using that token fail with 401, and revokes the refresh token family linked to the access token. If an additional refreshToken belonging to the caller is supplied in the optional request body, its refresh token family is also revoked.",
-        "operationId": "logout",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LogoutRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
+    "/api/showtimes/{id}" : {
+      "get" : {
+        "tags" : [ "Showtimes" ],
+        "summary" : "Get a showtime",
+        "description" : "Returns a showtime by UUID, including its cancellation status and reason when cancelled. An unknown showtime returns 404. This read is public.",
+        "operationId" : "get_2",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Showtime UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/showtimes/{id}": {
-      "get": {
-        "tags": [
-          "Showtimes"
-        ],
-        "summary": "Get a showtime",
-        "description": "Returns a showtime by UUID, including its cancellation status and reason when cancelled. An unknown showtime returns 404. This read is public.",
-        "operationId": "get_2",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Showtime UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440010"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ShowtimeResponse"
+          "example" : "550e8400-e29b-41d4-a716-446655440010"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       },
-      "delete": {
-        "tags": [
-          "Showtimes"
-        ],
-        "summary": "Delete a showtime",
-        "description": "Hard-deletes a showtime only when it has no live Pending or Confirmed/Refunded bookings; lapsed holds are removed with it. Unknown showtime returns 404, dependent booking 409. Requires ADMIN.",
-        "operationId": "delete_2",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Showtime UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440010"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
+      "delete" : {
+        "tags" : [ "Showtimes" ],
+        "summary" : "Delete a showtime",
+        "description" : "Hard-deletes a showtime only when it has no live Pending or Confirmed/Refunded bookings; lapsed holds are removed with it. Unknown showtime returns 404, dependent booking 409. Requires ADMIN.",
+        "operationId" : "delete_2",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Showtime UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "example" : "550e8400-e29b-41d4-a716-446655440010"
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/showtimes/{id}/seats": {
-      "get": {
-        "tags": [
-          "Showtimes"
-        ],
-        "summary": "Get a showtime's seat map",
-        "description": "Returns every seat with its current availability and calculated VND price. An unknown showtime returns 404; a cancelled showtime returns 409. This read is public.",
-        "operationId": "seats",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Showtime UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440010"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SeatMapResponse"
+    "/api/showtimes/{id}/seats" : {
+      "get" : {
+        "tags" : [ "Showtimes" ],
+        "summary" : "Get a showtime's seat map",
+        "description" : "Returns every seat with its current availability and calculated VND price. An unknown showtime returns 404; a cancelled showtime returns 409. This read is public.",
+        "operationId" : "seats",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Showtime UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440010"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SeatMapResponse"
                   }
                 }
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       }
     },
-    "/api/me": {
-      "get": {
-        "tags": [
-          "Accounts"
-        ],
-        "summary": "Get the authenticated account",
-        "description": "Returns the account identified by the JWT subject. Any authenticated role may call this operation; if the account no longer exists the response is 404.",
-        "operationId": "me",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/AccountResponse"
+    "/api/me" : {
+      "get" : {
+        "tags" : [ "Accounts" ],
+        "summary" : "Get the authenticated account",
+        "description" : "Returns the account identified by the JWT subject. Any authenticated role may call this operation; if the account no longer exists the response is 404.",
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountResponse"
                 }
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/bookings/{id}": {
-      "get": {
-        "tags": [
-          "Bookings"
-        ],
-        "summary": "Get my booking",
-        "description": "Returns a booking owned by the authenticated customer. Another customer's booking is indistinguishable from a missing booking and returns 404. Requires CUSTOMER.",
-        "operationId": "get_3",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Booking UUID owned by the authenticated customer.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440030"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/BookingResponse"
+    "/api/bookings/{id}" : {
+      "get" : {
+        "tags" : [ "Bookings" ],
+        "summary" : "Get my booking",
+        "description" : "Returns a booking owned by the authenticated customer. Another customer's booking is indistinguishable from a missing booking and returns 404. Requires CUSTOMER.",
+        "operationId" : "get_3",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Booking UUID owned by the authenticated customer.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440030"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingResponse"
                 }
               }
             }
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       },
-      "delete": {
-        "tags": [
-          "Bookings"
-        ],
-        "summary": "Abandon my pending booking",
-        "description": "Deletes a Pending booking and releases its seats. Expired holds can be abandoned too. Confirmed or Refunded bookings cannot be cancelled by a customer and return 409. Missing or another customer's booking returns 404. Requires CUSTOMER.",
-        "operationId": "abandon",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Booking UUID owned by the authenticated customer.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440030"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
+      "delete" : {
+        "tags" : [ "Bookings" ],
+        "summary" : "Abandon my pending booking",
+        "description" : "Deletes a Pending booking and releases its seats. Expired holds can be abandoned too. Confirmed or Refunded bookings cannot be cancelled by a customer and return 409. Missing or another customer's booking returns 404. Requires CUSTOMER.",
+        "operationId" : "abandon",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Booking UUID owned by the authenticated customer.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "example" : "550e8400-e29b-41d4-a716-446655440030"
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
-    "/api/auditoriums/{id}": {
-      "get": {
-        "tags": [
-          "Auditoriums"
-        ],
-        "summary": "Get an auditorium",
-        "description": "Returns an auditorium and its generated seats. This catalogue read is public; an unknown auditorium returns 404.",
-        "operationId": "get_4",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Auditorium UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440003"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuditoriumResponse"
+    "/api/auditoriums/{id}" : {
+      "get" : {
+        "tags" : [ "Auditoriums" ],
+        "summary" : "Get an auditorium",
+        "description" : "Returns an auditorium and its generated seats. This catalogue read is public; an unknown auditorium returns 404.",
+        "operationId" : "get_4",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Auditorium UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440003"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditoriumResponse"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         }
       },
-      "delete": {
-        "tags": [
-          "Auditoriums"
-        ],
-        "summary": "Delete an auditorium",
-        "description": "Hard-deletes an auditorium only when it has no showtimes. Requires ADMIN; an unknown auditorium returns 404 and dependent showtimes cause 409.",
-        "operationId": "delete_3",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Auditorium UUID.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "example": "550e8400-e29b-41d4-a716-446655440003"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
+      "delete" : {
+        "tags" : [ "Auditoriums" ],
+        "summary" : "Delete an auditorium",
+        "description" : "Hard-deletes an auditorium only when it has no showtimes. Requires ADMIN; an unknown auditorium returns 404 and dependent showtimes cause 409.",
+        "operationId" : "delete_3",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Auditorium UUID.",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "example" : "550e8400-e29b-41d4-a716-446655440003"
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     }
   },
-  "components": {
-    "schemas": {
-      "MovieRequest": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "Nonblank movie title.",
-            "example": "The Example",
-            "minLength": 1
+  "components" : {
+    "schemas" : {
+      "MovieRequest" : {
+        "type" : "object",
+        "properties" : {
+          "title" : {
+            "type" : "string",
+            "description" : "Nonblank movie title.",
+            "example" : "The Example",
+            "minLength" : 1
           },
-          "description": {
-            "type": "string",
-            "description": "Nonblank movie synopsis; no API length limit is defined.",
-            "example": "A story about cinema.",
-            "minLength": 1
+          "description" : {
+            "type" : "string",
+            "description" : "Nonblank movie synopsis; no API length limit is defined.",
+            "example" : "A story about cinema.",
+            "minLength" : 1
           },
-          "durationMinutes": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Running time in whole minutes.",
-            "example": 120,
-            "exclusiveMinimum": 0,
-            "minimum": 1
+          "durationMinutes" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Running time in whole minutes.",
+            "example" : 120,
+            "exclusiveMinimum" : 0,
+            "minimum" : 1
           },
-          "genre": {
-            "type": "string",
-            "description": "Nonblank movie genre.",
-            "example": "Drama",
-            "minLength": 1
+          "genre" : {
+            "type" : "string",
+            "description" : "Nonblank movie genre.",
+            "example" : "Drama",
+            "minLength" : 1
           },
-          "ageRating": {
-            "type": "string",
-            "description": "Display-only age rating.",
-            "enum": [
-              "P",
-              "K",
-              "T13",
-              "T16",
-              "T18"
-            ],
-            "example": "T13"
+          "ageRating" : {
+            "type" : "string",
+            "description" : "Display-only age rating.",
+            "enum" : [ "P", "K", "T13", "T16", "T18" ],
+            "example" : "T13"
           },
-          "releaseDate": {
-            "type": "string",
-            "format": "date",
-            "description": "Release date as an ISO-8601 calendar date.",
-            "example": "2026-05-01"
+          "releaseDate" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Release date as an ISO-8601 calendar date.",
+            "example" : "2026-05-01"
           },
-          "posterUrl": {
-            "type": "string",
-            "description": "Nonblank poster URL; no API length limit is defined.",
-            "example": "https://example.com/poster.jpg",
-            "minLength": 1
+          "posterUrl" : {
+            "type" : "string",
+            "description" : "Nonblank poster URL; no API length limit is defined.",
+            "example" : "https://example.com/poster.jpg",
+            "minLength" : 1
           }
         },
-        "required": [
-          "ageRating",
-          "description",
-          "durationMinutes",
-          "genre",
-          "posterUrl",
-          "releaseDate",
-          "title"
-        ]
+        "required" : [ "ageRating", "description", "durationMinutes", "genre", "posterUrl", "releaseDate", "title" ]
       },
-      "MovieResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Movie identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440000"
+      "MovieResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Movie identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440000"
           },
-          "title": {
-            "type": "string",
-            "description": "Movie title.",
-            "example": "The Example"
+          "title" : {
+            "type" : "string",
+            "description" : "Movie title.",
+            "example" : "The Example"
           },
-          "description": {
-            "type": "string",
-            "description": "Movie synopsis.",
-            "example": "A story about cinema."
+          "description" : {
+            "type" : "string",
+            "description" : "Movie synopsis.",
+            "example" : "A story about cinema."
           },
-          "durationMinutes": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Running time in whole minutes.",
-            "example": 120
+          "durationMinutes" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Running time in whole minutes.",
+            "example" : 120
           },
-          "genre": {
-            "type": "string",
-            "description": "Movie genre.",
-            "example": "Drama"
+          "genre" : {
+            "type" : "string",
+            "description" : "Movie genre.",
+            "example" : "Drama"
           },
-          "ageRating": {
-            "type": "string",
-            "description": "Display-only age rating.",
-            "enum": [
-              "P",
-              "K",
-              "T13",
-              "T16",
-              "T18"
-            ],
-            "example": "T13"
+          "ageRating" : {
+            "type" : "string",
+            "description" : "Display-only age rating.",
+            "enum" : [ "P", "K", "T13", "T16", "T18" ],
+            "example" : "T13"
           },
-          "releaseDate": {
-            "type": "string",
-            "format": "date",
-            "description": "Release date.",
-            "example": "2026-05-01"
+          "releaseDate" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Release date.",
+            "example" : "2026-05-01"
           },
-          "posterUrl": {
-            "type": "string",
-            "description": "Poster URL.",
-            "example": "https://example.com/poster.jpg"
+          "posterUrl" : {
+            "type" : "string",
+            "description" : "Poster URL.",
+            "example" : "https://example.com/poster.jpg"
           }
         }
       },
-      "CinemaRequest": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Nonblank cinema name.",
-            "example": "Central Cinema",
-            "minLength": 1
+      "CinemaRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "Nonblank cinema name.",
+            "example" : "Central Cinema",
+            "minLength" : 1
           },
-          "address": {
-            "type": "string",
-            "description": "Nonblank street address; no API length limit is defined.",
-            "example": "1 Example Street",
-            "minLength": 1
+          "address" : {
+            "type" : "string",
+            "description" : "Nonblank street address; no API length limit is defined.",
+            "example" : "1 Example Street",
+            "minLength" : 1
           }
         },
-        "required": [
-          "address",
-          "name"
-        ]
+        "required" : [ "address", "name" ]
       },
-      "CinemaResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Cinema identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440000"
+      "CinemaResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Cinema identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440000"
           },
-          "name": {
-            "type": "string",
-            "description": "Cinema name.",
-            "example": "Central Cinema"
+          "name" : {
+            "type" : "string",
+            "description" : "Cinema name.",
+            "example" : "Central Cinema"
           },
-          "address": {
-            "type": "string",
-            "description": "Street address.",
-            "example": "1 Example Street"
+          "address" : {
+            "type" : "string",
+            "description" : "Street address.",
+            "example" : "1 Example Street"
           }
         }
       },
-      "ShowtimeRequest": {
-        "type": "object",
-        "properties": {
-          "movieId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Movie to screen.",
-            "example": "550e8400-e29b-41d4-a716-446655440000"
+      "ShowtimeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "movieId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Movie to screen.",
+            "example" : "550e8400-e29b-41d4-a716-446655440000"
           },
-          "auditoriumId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Auditorium for the screening.",
-            "example": "550e8400-e29b-41d4-a716-446655440001"
+          "auditoriumId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Auditorium for the screening.",
+            "example" : "550e8400-e29b-41d4-a716-446655440001"
           },
-          "startsAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Start instant as ISO-8601 date-time with an offset.",
-            "example": "2026-05-01T19:30:00+07:00"
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Start instant as ISO-8601 date-time with an offset.",
+            "example" : "2026-05-01T19:30:00+07:00"
           },
-          "basePrice": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Positive integer VND base price, at most 100,000,000.",
-            "example": 100000,
-            "exclusiveMinimum": 0,
-            "minimum": 1,
-            "maximum": 100000000
+          "basePrice" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Positive integer VND base price, at most 100,000,000.",
+            "example" : 100000,
+            "exclusiveMinimum" : 0,
+            "maximum" : 100000000,
+            "minimum" : 1
           }
         },
-        "required": [
-          "auditoriumId",
-          "basePrice",
-          "movieId",
-          "startsAt"
-        ]
+        "required" : [ "auditoriumId", "basePrice", "movieId", "startsAt" ]
       },
-      "CancellationResponse": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "description": "Cancellation reason.",
-            "enum": [
-              "EQUIPMENT_FAILURE",
-              "POWER_OUTAGE",
-              "EMERGENCY",
-              "OTHER"
-            ],
-            "example": "EQUIPMENT_FAILURE"
+      "CancellationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "reason" : {
+            "type" : "string",
+            "description" : "Cancellation reason.",
+            "enum" : [ "EQUIPMENT_FAILURE", "POWER_OUTAGE", "EMERGENCY", "OTHER" ],
+            "example" : "EQUIPMENT_FAILURE"
           },
-          "note": {
-            "type": "string",
-            "description": "Cancellation note, if supplied.",
-            "example": "Projector failure"
+          "note" : {
+            "type" : "string",
+            "description" : "Cancellation note, if supplied.",
+            "example" : "Projector failure"
           }
         }
       },
-      "ShowtimeResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Showtime identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440010"
+      "ShowtimeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Showtime identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440010"
           },
-          "movieId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Scheduled movie identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440000"
+          "movieId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Scheduled movie identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440000"
           },
-          "auditoriumId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Scheduled auditorium identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440001"
+          "auditoriumId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Scheduled auditorium identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440001"
           },
-          "startsAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Start instant.",
-            "example": "2026-05-01T19:30:00Z"
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Start instant.",
+            "example" : "2026-05-01T19:30:00Z"
           },
-          "endsAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Fixed end instant (movie duration plus 15 minutes).",
-            "example": "2026-05-01T21:45:00Z"
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Fixed end instant (movie duration plus 15 minutes).",
+            "example" : "2026-05-01T21:45:00Z"
           },
-          "basePrice": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Base price in integer VND.",
-            "example": 100000
+          "basePrice" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Base price in integer VND.",
+            "example" : 100000
           },
-          "status": {
-            "type": "string",
-            "description": "Current status.",
-            "enum": [
-              "SCHEDULED",
-              "CANCELLED"
-            ],
-            "example": "SCHEDULED"
+          "status" : {
+            "type" : "string",
+            "description" : "Current status.",
+            "enum" : [ "SCHEDULED", "CANCELLED" ],
+            "example" : "SCHEDULED"
           },
-          "cancellation": {
-            "$ref": "#/components/schemas/CancellationResponse",
-            "description": "Cancellation details; null unless cancelled."
+          "cancellation" : {
+            "$ref" : "#/components/schemas/CancellationResponse",
+            "description" : "Cancellation details; null unless cancelled."
           }
         }
       },
-      "CancellationRequest": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "description": "Cancellation reason. OTHER requires a nonblank note.",
-            "enum": [
-              "EQUIPMENT_FAILURE",
-              "POWER_OUTAGE",
-              "EMERGENCY",
-              "OTHER"
-            ],
-            "example": "EQUIPMENT_FAILURE"
-          },
-          "note": {
-            "type": "string",
-            "description": "Optional note (0\u00e2\u20ac\u201c200 characters); required when reason is OTHER.",
-            "example": "Projector failure",
-            "maxLength": 200
-          }
-        },
-        "required": [
-          "reason"
-        ]
-      },
-      "AuditoriumRequest": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Nonblank name unique within its cinema.",
-            "example": "Screen 1",
-            "minLength": 1
-          },
-          "rows": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Lettered rows A\u00e2\u20ac\u201cZ; choose 1 to 26 rows.",
-            "example": 12,
-            "maximum": 26,
-            "minimum": 1
-          },
-          "seatsPerRow": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Positive number of seats in each row.",
-            "example": 10,
-            "exclusiveMinimum": 0,
-            "minimum": 1
-          },
-          "vipRows": {
-            "type": "array",
-            "description": "Rows designated as VIP.",
-            "items": {
-              "type": "string",
-              "example": "B"
+      "CancellationRequest" : {
+        "type" : "object",
+        "if" : {
+          "type" : "object",
+          "properties" : {
+            "reason" : {
+              "const" : "OTHER"
             }
           },
-          "coupleRows": {
-            "type": "array",
-            "description": "Rows designated as Couple.",
-            "items": {
-              "type": "string",
-              "example": "C"
+          "required" : [ "reason" ]
+        },
+        "then" : {
+          "type" : "object",
+          "properties" : {
+            "note" : {
+              "type" : "string",
+              "maxLength" : 200,
+              "minLength" : 1,
+              "pattern" : ".*\\S.*"
+            }
+          },
+          "required" : [ "note" ]
+        },
+        "properties" : {
+          "reason" : {
+            "type" : "string",
+            "description" : "Cancellation reason. OTHER requires a nonblank note.",
+            "enum" : [ "EQUIPMENT_FAILURE", "POWER_OUTAGE", "EMERGENCY", "OTHER" ],
+            "example" : "EQUIPMENT_FAILURE"
+          },
+          "note" : {
+            "type" : "string",
+            "description" : "Optional note (0-200 characters); required when reason is OTHER.",
+            "example" : "Projector failure",
+            "maxLength" : 200
+          }
+        },
+        "required" : [ "reason" ]
+      },
+      "AuditoriumRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "Nonblank name unique within its cinema.",
+            "example" : "Screen 1",
+            "minLength" : 1
+          },
+          "rows" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Lettered rows A-Z; choose 1 to 26 rows.",
+            "example" : 12,
+            "maximum" : 26,
+            "minimum" : 1
+          },
+          "seatsPerRow" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Positive number of seats in each row.",
+            "example" : 10,
+            "exclusiveMinimum" : 0,
+            "minimum" : 1
+          },
+          "vipRows" : {
+            "type" : "array",
+            "description" : "Rows designated as VIP.",
+            "items" : {
+              "type" : "string",
+              "example" : "B"
+            }
+          },
+          "coupleRows" : {
+            "type" : "array",
+            "description" : "Rows designated as Couple.",
+            "items" : {
+              "type" : "string",
+              "example" : "C"
             }
           }
         },
-        "required": [
-          "coupleRows",
-          "name",
-          "rows",
-          "seatsPerRow",
-          "vipRows"
-        ]
+        "required" : [ "coupleRows", "name", "rows", "seatsPerRow", "vipRows" ]
       },
-      "AuditoriumResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Auditorium identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440000"
+      "AuditoriumResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Auditorium identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440000"
           },
-          "cinemaId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Owning cinema identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440001"
+          "cinemaId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Owning cinema identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440001"
           },
-          "name": {
-            "type": "string",
-            "description": "Auditorium name.",
-            "example": "Screen 1"
+          "name" : {
+            "type" : "string",
+            "description" : "Auditorium name.",
+            "example" : "Screen 1"
           },
-          "rows": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Number of lettered rows.",
-            "example": 12
+          "rows" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Number of lettered rows.",
+            "example" : 12
           },
-          "seatsPerRow": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Seats per row.",
-            "example": 10
+          "seatsPerRow" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Seats per row.",
+            "example" : 10
           },
-          "seats": {
-            "type": "array",
-            "description": "Generated seats; omitted in auditorium summaries.",
-            "items": {
-              "$ref": "#/components/schemas/SeatResponse"
+          "seats" : {
+            "type" : "array",
+            "description" : "Generated seats; omitted in auditorium summaries.",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatResponse"
             }
           }
         }
       },
-      "SeatResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Seat identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440002"
+      "SeatResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Seat identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440002"
           },
-          "row": {
-            "type": "string",
-            "description": "Lettered row.",
-            "example": "A"
+          "row" : {
+            "type" : "string",
+            "description" : "Lettered row.",
+            "example" : "A"
           },
-          "number": {
-            "type": "integer",
-            "format": "int32",
-            "description": "One-based seat position in the row.",
-            "example": 1
+          "number" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "One-based seat position in the row.",
+            "example" : 1
           },
-          "label": {
-            "type": "string",
-            "description": "Seat label.",
-            "example": "A1"
+          "label" : {
+            "type" : "string",
+            "description" : "Seat label.",
+            "example" : "A1"
           },
-          "type": {
-            "type": "string",
-            "description": "Seat type.",
-            "example": "STANDARD"
+          "type" : {
+            "type" : "string",
+            "description" : "Seat type.",
+            "example" : "STANDARD"
           }
         }
       },
-      "BookingRequest": {
-        "type": "object",
-        "properties": {
-          "showtimeId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Showtime to book.",
-            "example": "550e8400-e29b-41d4-a716-446655440010"
+      "BookingRequest" : {
+        "type" : "object",
+        "properties" : {
+          "showtimeId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Showtime to book.",
+            "example" : "550e8400-e29b-41d4-a716-446655440010"
           },
-          "seatIds": {
-            "type": "array",
-            "description": "Choose 1\u00e2\u20ac\u201c8 unique seat IDs for this showtime.",
-            "items": {
-              "type": "string",
-              "format": "uuid",
-              "example": "550e8400-e29b-41d4-a716-446655440020"
+          "seatIds" : {
+            "type" : "array",
+            "description" : "Choose 1-8 unique seat IDs for this showtime.",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid",
+              "example" : "550e8400-e29b-41d4-a716-446655440020"
             },
-            "maxItems": 8,
-            "minItems": 1
+            "maxItems" : 8,
+            "minItems" : 1
           }
         },
-        "required": [
-          "seatIds",
-          "showtimeId"
-        ]
+        "required" : [ "seatIds", "showtimeId" ]
       },
-      "BookedSeat": {
-        "type": "object",
-        "properties": {
-          "seatId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Seat identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440020"
+      "BookedSeat" : {
+        "type" : "object",
+        "properties" : {
+          "seatId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Seat identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440020"
           },
-          "price": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Seat price copied when the booking was created, in integer VND.",
-            "example": 100000
+          "price" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Seat price copied when the booking was created, in integer VND.",
+            "example" : 100000
           }
         }
       },
-      "BookingResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Booking identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440030"
+      "BookingResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Booking identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440030"
           },
-          "showtimeId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Booked showtime identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440010"
+          "showtimeId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Booked showtime identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440010"
           },
-          "status": {
-            "type": "string",
-            "description": "Booking state, including computed EXPIRED for elapsed holds.",
-            "enum": [
-              "PENDING",
-              "CONFIRMED",
-              "EXPIRED",
-              "REFUNDED"
-            ],
-            "example": "PENDING"
+          "status" : {
+            "type" : "string",
+            "description" : "Booking state, including computed EXPIRED for elapsed holds.",
+            "enum" : [ "PENDING", "CONFIRMED", "EXPIRED", "REFUNDED" ],
+            "example" : "PENDING"
           },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Booking creation instant.",
-            "example": "2026-05-01T12:00:00Z"
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Booking creation instant.",
+            "example" : "2026-05-01T12:00:00Z"
           },
-          "expiresAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Hold expiry instant (10 minutes after creation).",
-            "example": "2026-05-01T12:10:00Z"
+          "expiresAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Hold expiry instant (10 minutes after creation).",
+            "example" : "2026-05-01T12:10:00Z"
           },
-          "seats": {
-            "type": "array",
-            "description": "Seats and their prices copied when booked.",
-            "items": {
-              "$ref": "#/components/schemas/BookedSeat",
-              "example": {
-                "seatId": "550e8400-e29b-41d4-a716-446655440020",
-                "price": 100000
+          "seats" : {
+            "type" : "array",
+            "description" : "Seats and their prices copied when booked.",
+            "items" : {
+              "$ref" : "#/components/schemas/BookedSeat",
+              "example" : {
+                "seatId" : "550e8400-e29b-41d4-a716-446655440020",
+                "price" : 100000
               }
             }
           },
-          "totalPrice": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Total price in integer VND.",
-            "example": 100000
+          "totalPrice" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Total price in integer VND.",
+            "example" : 100000
           }
         }
       },
-      "RegisterRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Nonblank email address used to identify the account.",
-            "example": "alice@example.com",
-            "minLength": 1
+      "RegisterRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "description" : "Nonblank email address used to identify the account.",
+            "example" : "alice@example.com",
+            "minLength" : 1
           },
-          "password": {
-            "type": "string",
-            "description": "Password with a minimum length of 8 characters.",
-            "example": "correctHorseBatteryStaple",
-            "minLength": 8
+          "password" : {
+            "type" : "string",
+            "description" : "Password with a minimum length of 8 characters and at most 72 UTF-8 bytes.",
+            "example" : "correctHorseBatteryStaple",
+            "minLength" : 8
           },
-          "fullName": {
-            "type": "string",
-            "description": "Customer's nonblank full name.",
-            "example": "Alice Nguyen",
-            "minLength": 1
+          "fullName" : {
+            "type" : "string",
+            "description" : "Customer's nonblank full name.",
+            "example" : "Alice Nguyen",
+            "minLength" : 1
           }
         },
-        "required": [
-          "email",
-          "fullName",
-          "password"
-        ]
+        "required" : [ "email", "fullName", "password" ]
       },
-      "AccountResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Account identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440000"
+      "AccountResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Account identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440000"
           },
-          "email": {
-            "type": "string",
-            "description": "Normalized email address.",
-            "example": "alice@example.com"
+          "email" : {
+            "type" : "string",
+            "description" : "Normalized email address.",
+            "example" : "alice@example.com"
           },
-          "fullName": {
-            "type": "string",
-            "description": "Account holder's full name.",
-            "example": "Alice Nguyen"
+          "fullName" : {
+            "type" : "string",
+            "description" : "Account holder's full name.",
+            "example" : "Alice Nguyen"
           },
-          "role": {
-            "type": "string",
-            "description": "Account role.",
-            "example": "CUSTOMER"
+          "role" : {
+            "type" : "string",
+            "description" : "Account role.",
+            "example" : "CUSTOMER"
           }
         }
       },
-      "LoginRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "description": "Registered email address.",
-            "example": "alice@example.com",
-            "minLength": 1
-          },
-          "password": {
-            "type": "string",
-            "description": "Account password.",
-            "example": "correctHorseBatteryStaple",
-            "minLength": 1
+      "RefreshRequest" : {
+        "type" : "object",
+        "properties" : {
+          "refreshToken" : {
+            "type" : "string",
+            "description" : "Active refresh token returned by login or a previous refresh.",
+            "example" : "dGhpcy1pcy1hLXNhbXBsZS1yZWZyZXNoLXRva2Vu",
+            "minLength" : 1
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required" : [ "refreshToken" ]
       },
-      "RefreshRequest": {
-        "type": "object",
-        "properties": {
-          "refreshToken": {
-            "type": "string",
-            "description": "Active refresh token returned by login or a previous refresh.",
-            "example": "dGhpcy1pcy1hLXNhbXBsZS1yZWZyZXNoLXRva2Vu",
-            "minLength": 1
+      "TokenResponse" : {
+        "type" : "object",
+        "properties" : {
+          "accessToken" : {
+            "type" : "string",
+            "description" : "Signed HS256 access token."
+          },
+          "refreshToken" : {
+            "type" : "string",
+            "description" : "Opaque revocable rotating refresh token."
+          },
+          "tokenType" : {
+            "type" : "string",
+            "description" : "Authorization scheme.",
+            "example" : "Bearer"
+          },
+          "expiresIn" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Access token lifetime in seconds.",
+            "example" : 900
+          }
+        }
+      },
+      "LogoutRequest" : {
+        "type" : "object",
+        "properties" : {
+          "refreshToken" : {
+            "type" : "string",
+            "description" : "Optional refresh token to revoke alongside the current access token.",
+            "example" : "dGhpcy1pcy1hLXNhbXBsZS1yZWZyZXNoLXRva2Vu"
+          }
+        }
+      },
+      "LoginRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "description" : "Registered email address.",
+            "example" : "alice@example.com",
+            "minLength" : 1
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Account password.",
+            "example" : "correctHorseBatteryStaple",
+            "minLength" : 1
           }
         },
-        "required": [
-          "refreshToken"
-        ]
+        "required" : [ "email", "password" ]
       },
-      "LogoutRequest": {
-        "type": "object",
-        "properties": {
-          "refreshToken": {
-            "type": "string",
-            "description": "Optional refresh token to revoke alongside the current access token.",
-            "example": "dGhpcy1pcy1hLXNhbXBsZS1yZWZyZXNoLXRva2Vu"
+      "SeatMapResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Seat identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440020"
+          },
+          "row" : {
+            "type" : "string",
+            "description" : "Lettered seat row.",
+            "example" : "A"
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "One-based seat position in the row.",
+            "example" : 1
+          },
+          "label" : {
+            "type" : "string",
+            "description" : "Seat label.",
+            "example" : "A1"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "Seat type.",
+            "example" : "STANDARD"
+          },
+          "price" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Price for this seat in integer VND.",
+            "example" : 100000
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "Availability status.",
+            "enum" : [ "AVAILABLE", "HELD", "SOLD" ],
+            "example" : "AVAILABLE"
           }
         }
       },
-      "TokenResponse": {
-        "type": "object",
-        "properties": {
-          "accessToken": {
-            "type": "string",
-            "description": "Signed HS256 access token."
+      "ValidationProblem" : {
+        "type" : "object",
+        "description" : "RFC 9457 problem details. Validation errors and seatIds are optional extensions.",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "default" : "about:blank"
           },
-          "refreshToken": {
-            "type": "string",
-            "description": "Opaque revocable rotating refresh token."
+          "title" : {
+            "type" : "string"
           },
-          "tokenType": {
-            "type": "string",
-            "description": "Authorization scheme.",
-            "example": "Bearer"
+          "status" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "expiresIn": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Access token lifetime in seconds.",
-            "example": 900
-          }
-        }
-      },
-      "SeatMapResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Seat identifier.",
-            "example": "550e8400-e29b-41d4-a716-446655440020"
+          "detail" : {
+            "type" : "string"
           },
-          "row": {
-            "type": "string",
-            "description": "Lettered seat row.",
-            "example": "A"
+          "instance" : {
+            "type" : "string"
           },
-          "number": {
-            "type": "integer",
-            "format": "int32",
-            "description": "One-based seat position in the row.",
-            "example": 1
-          },
-          "label": {
-            "type": "string",
-            "description": "Seat label.",
-            "example": "A1"
-          },
-          "type": {
-            "type": "string",
-            "description": "Seat type.",
-            "example": "STANDARD"
-          },
-          "price": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Price for this seat in integer VND.",
-            "example": 100000
-          },
-          "status": {
-            "type": "string",
-            "description": "Availability status.",
-            "enum": [
-              "AVAILABLE",
-              "HELD",
-              "SOLD"
-            ],
-            "example": "AVAILABLE"
-          }
-        }
-      },
-      "ValidationProblem": {
-        "type": "object",
-        "description": "RFC 9457 problem details. Validation errors and seatIds are optional extensions.",
-        "properties": {
-          "type": {
-            "type": "string",
-            "default": "about:blank"
-          },
-          "title": {
-            "type": "string"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "detail": {
-            "type": "string"
-          },
-          "instance": {
-            "type": "string"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "field": {
-                  "type": "string"
+          "errors" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "field" : {
+                  "type" : "string"
                 },
-                "message": {
-                  "type": "string"
+                "message" : {
+                  "type" : "string"
                 }
               },
-              "required": [
-                "field",
-                "message"
-              ]
+              "required" : [ "field", "message" ]
             }
           },
-          "seatIds": {
-            "type": "array",
-            "description": "Seat IDs that were already held or sold; only present for seat-taken conflicts.",
-            "items": {
-              "type": "string",
-              "format": "uuid"
+          "seatIds" : {
+            "type" : "array",
+            "description" : "Seat IDs that were already held or sold; only present for seat-taken conflicts.",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
             }
           }
         },
-        "required": [
-          "status",
-          "title"
-        ]
+        "required" : [ "status", "title" ]
       }
     },
-    "responses": {
-      "BadRequest": {
-        "description": "Invalid body, parameter, or business-rule input.",
-        "content": {
-          "application/problem+json": {
-            "schema": {
-              "$ref": "#/components/schemas/ValidationProblem"
+    "responses" : {
+      "BadRequest" : {
+        "description" : "Invalid body, parameter, or business-rule input.",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ValidationProblem"
             },
-            "examples": {
-              "invalidDate": {
-                "summary": "Invalid date",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "A request value has an invalid type.",
-                  "errors": [
-                    {
-                      "field": "date",
-                      "message": "Must be an ISO-8601 date (yyyy-MM-dd)."
-                    }
-                  ]
+            "examples" : {
+              "invalidDate" : {
+                "summary" : "Invalid date",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "A request value has an invalid type.",
+                  "errors" : [ {
+                    "field" : "date",
+                    "message" : "Must be an ISO-8601 date (yyyy-MM-dd)."
+                  } ]
                 }
               },
-              "invalidEnum": {
-                "summary": "Unknown enum value",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Request body contains an invalid value.",
-                  "errors": [
-                    {
-                      "field": "ageRating",
-                      "message": "Allowed values are [P, K, T13, T16, T18]."
-                    }
-                  ]
+              "unreadableBody" : {
+                "summary" : "Unreadable body",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "Request body could not be read."
                 }
               },
-              "invalidLayout": {
-                "summary": "Invalid layout",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Seat layout is not allowed"
+              "invalidEnum" : {
+                "summary" : "Unknown enum value",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "Request body contains an invalid value.",
+                  "errors" : [ {
+                    "field" : "ageRating",
+                    "message" : "Allowed values are [P, K, T13, T16, T18]."
+                  } ]
                 }
               },
-              "invalidCancellationReason": {
-                "summary": "Unknown cancellation reason",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Request body contains an invalid value.",
-                  "errors": [
-                    {
-                      "field": "reason",
-                      "message": "Allowed values are [EQUIPMENT_FAILURE, POWER_OUTAGE, EMERGENCY, OTHER]."
-                    }
-                  ]
+              "duplicateSeats" : {
+                "summary" : "Duplicate seat IDs",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "Duplicate seatIds"
                 }
               },
-              "invalidUuid": {
-                "summary": "Invalid UUID",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "A request value has an invalid type.",
-                  "errors": [
-                    {
-                      "field": "id",
-                      "message": "Must be a valid UUID."
-                    }
-                  ]
+              "invalidPagination" : {
+                "summary" : "Invalid pagination parameter",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "Request validation failed.",
+                  "errors" : [ {
+                    "field" : "size",
+                    "message" : "Size must be at most 100"
+                  } ]
                 }
               },
-              "unreadableBody": {
-                "summary": "Unreadable body",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Request body could not be read."
+              "invalidLayout" : {
+                "summary" : "Invalid layout",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "Seat layout is not allowed"
                 }
               },
-              "duplicateSeats": {
-                "summary": "Duplicate seat IDs",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Duplicate seatIds"
+              "businessRule" : {
+                "summary" : "Invalid base price",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "Base price must be positive"
                 }
               },
-              "cancellationNote": {
-                "summary": "Cancellation note too long",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "A cancellation note has at most 200 characters"
+              "fieldValidation" : {
+                "summary" : "Bean validation",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "Request validation failed.",
+                  "errors" : [ {
+                    "field" : "name",
+                    "message" : "Name is required"
+                  } ]
                 }
               },
-              "fieldValidation": {
-                "summary": "Bean validation",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Request validation failed.",
-                  "errors": [
-                    {
-                      "field": "name",
-                      "message": "Name is required"
-                    }
-                  ]
+              "invalidUuid" : {
+                "summary" : "Invalid UUID",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "A request value has an invalid type.",
+                  "errors" : [ {
+                    "field" : "id",
+                    "message" : "Must be a valid UUID."
+                  } ]
                 }
               },
-              "businessRule": {
-                "summary": "Invalid base price",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Base price must be positive"
+              "cancellationNote" : {
+                "summary" : "Cancellation note too long",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "A cancellation note has at most 200 characters"
+                }
+              },
+              "invalidCancellationReason" : {
+                "summary" : "Unknown cancellation reason",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "Request body contains an invalid value.",
+                  "errors" : [ {
+                    "field" : "reason",
+                    "message" : "Allowed values are [EQUIPMENT_FAILURE, POWER_OUTAGE, EMERGENCY, OTHER]."
+                  } ]
                 }
               }
             }
           }
         }
       },
-      "LoginBadRequest": {
-        "description": "Login input is invalid.",
-        "content": {
-          "application/problem+json": {
-            "schema": {
-              "$ref": "#/components/schemas/ValidationProblem"
+      "LoginBadRequest" : {
+        "description" : "Login input is invalid.",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ValidationProblem"
             },
-            "examples": {
-              "validation": {
-                "summary": "Generic login validation",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Invalid request."
+            "examples" : {
+              "validation" : {
+                "summary" : "Generic login validation",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Bad Request",
+                  "status" : 400,
+                  "detail" : "Invalid request."
                 }
               }
             }
           }
         }
       },
-      "Unauthorized": {
-        "description": "Authentication is required, credentials are invalid, or a supplied bearer token is invalid.",
-        "content": {
-          "application/problem+json": {
-            "schema": {
-              "$ref": "#/components/schemas/ValidationProblem"
+      "Unauthorized" : {
+        "description" : "Authentication is required, credentials are invalid, or a supplied bearer token is invalid.",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ValidationProblem"
             },
-            "examples": {
-              "invalidBearer": {
-                "summary": "Invalid bearer token",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Unauthorized",
-                  "status": 401
+            "examples" : {
+              "invalidCredentials" : {
+                "summary" : "Invalid email or password",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Unauthorized",
+                  "status" : 401,
+                  "detail" : "Invalid email or password"
                 }
               },
-              "invalidCredentials": {
-                "summary": "Invalid email or password",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Unauthorized",
-                  "status": 401,
-                  "detail": "Invalid email or password"
+              "invalidBearer" : {
+                "summary" : "Invalid bearer token",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Unauthorized",
+                  "status" : 401
                 }
               }
             }
           }
         }
       },
-      "Forbidden": {
-        "description": "The authenticated account does not have the role required for this operation.",
-        "content": {
-          "application/problem+json": {
-            "schema": {
-              "$ref": "#/components/schemas/ValidationProblem"
+      "Forbidden" : {
+        "description" : "The authenticated account does not have the role required for this operation.",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ValidationProblem"
             },
-            "examples": {
-              "roleRequired": {
-                "summary": "Insufficient role",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Forbidden",
-                  "status": 403
+            "examples" : {
+              "roleRequired" : {
+                "summary" : "Insufficient role",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Forbidden",
+                  "status" : 403
                 }
               }
             }
           }
         }
       },
-      "NotFound": {
-        "description": "The requested resource was not found.",
-        "content": {
-          "application/problem+json": {
-            "schema": {
-              "$ref": "#/components/schemas/ValidationProblem"
+      "NotFound" : {
+        "description" : "The requested resource was not found.",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ValidationProblem"
             },
-            "examples": {
-              "showtime": {
-                "summary": "Showtime not found",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "Showtime not found"
+            "examples" : {
+              "cinema" : {
+                "summary" : "Cinema not found",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Not Found",
+                  "status" : 404,
+                  "detail" : "Cinema not found"
                 }
               },
-              "auditorium": {
-                "summary": "Auditorium not found",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "Auditorium not found"
+              "account" : {
+                "summary" : "Account not found",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Not Found",
+                  "status" : 404,
+                  "detail" : "Account not found"
                 }
               },
-              "booking": {
-                "summary": "Booking not found",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "Booking not found"
+              "movie" : {
+                "summary" : "Movie not found",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Not Found",
+                  "status" : 404,
+                  "detail" : "Movie not found"
                 }
               },
-              "movie": {
-                "summary": "Movie not found",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "Movie not found"
+              "booking" : {
+                "summary" : "Booking not found",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Not Found",
+                  "status" : 404,
+                  "detail" : "Booking not found"
                 }
               },
-              "account": {
-                "summary": "Account not found",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "Account not found"
+              "auditorium" : {
+                "summary" : "Auditorium not found",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Not Found",
+                  "status" : 404,
+                  "detail" : "Auditorium not found"
                 }
               },
-              "cinema": {
-                "summary": "Cinema not found",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "Cinema not found"
+              "showtime" : {
+                "summary" : "Showtime not found",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Not Found",
+                  "status" : 404,
+                  "detail" : "Showtime not found"
                 }
               }
             }
           }
         }
       },
-      "Conflict": {
-        "description": "The request conflicts with the current business state.",
-        "content": {
-          "application/problem+json": {
-            "schema": {
-              "$ref": "#/components/schemas/ValidationProblem"
+      "Conflict" : {
+        "description" : "The request conflicts with the current business state.",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ValidationProblem"
             },
-            "examples": {
-              "showtimeHasBookings": {
-                "summary": "Showtime has bookings",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Showtime has Bookings"
+            "examples" : {
+              "bookingState" : {
+                "summary" : "Booking cannot be paid",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Booking is EXPIRED, only a Pending Booking can be paid"
                 }
               },
-              "cinemaHasAuditoriums": {
-                "summary": "Cinema has auditoriums",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Cinema has Auditoriums"
+              "bookingPending" : {
+                "summary" : "Customer has a pending booking",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Customer already has a Pending Booking 550e8400-e29b-41d4-a716-446655440000"
                 }
               },
-              "auditoriumNameTaken": {
-                "summary": "Auditorium name is already used",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Auditorium name is already used in this Cinema"
+              "seatTaken" : {
+                "summary" : "Seat already taken",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Seat already taken: [550e8400-e29b-41d4-a716-446655440000]",
+                  "seatIds" : [ "550e8400-e29b-41d4-a716-446655440000" ]
                 }
               },
-              "resourceConflict": {
-                "summary": "Showtime already cancelled",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Showtime is Cancelled"
+              "auditoriumHasShowtimes" : {
+                "summary" : "Auditorium has showtimes",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Auditorium has Showtimes"
                 }
               },
-              "movieHasShowtimes": {
-                "summary": "Movie has showtimes",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Movie has Showtimes"
+              "cancellationConflict" : {
+                "summary" : "Showtime cancellation conflict",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Showtime is already Cancelled or has ended"
                 }
               },
-              "emailTaken": {
-                "summary": "Email already registered",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Email already registered"
+              "emailTaken" : {
+                "summary" : "Email already registered",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Email already registered"
                 }
               },
-              "cancellationConflict": {
-                "summary": "Showtime cancellation conflict",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Showtime is already Cancelled or has ended"
+              "movieHasShowtimes" : {
+                "summary" : "Movie has showtimes",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Movie has Showtimes"
                 }
               },
-              "auditoriumHasShowtimes": {
-                "summary": "Auditorium has showtimes",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Auditorium has Showtimes"
+              "resourceConflict" : {
+                "summary" : "Showtime already cancelled",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Showtime is Cancelled"
                 }
               },
-              "seatTaken": {
-                "summary": "Seat already taken",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Seat already taken: [550e8400-e29b-41d4-a716-446655440000]",
-                  "seatIds": [
-                    "550e8400-e29b-41d4-a716-446655440000"
-                  ]
+              "auditoriumNameTaken" : {
+                "summary" : "Auditorium name is already used",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Auditorium name is already used in this Cinema"
                 }
               },
-              "bookingPending": {
-                "summary": "Customer has a pending booking",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Customer already has a Pending Booking 550e8400-e29b-41d4-a716-446655440000"
+              "cinemaHasAuditoriums" : {
+                "summary" : "Cinema has auditoriums",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Cinema has Auditoriums"
                 }
               },
-              "bookingState": {
-                "summary": "Booking cannot be paid",
-                "value": {
-                  "type": "about:blank",
-                  "title": "Conflict",
-                  "status": 409,
-                  "detail": "Booking is EXPIRED, only a Pending Booking can be paid"
+              "showtimeHasBookings" : {
+                "summary" : "Showtime has bookings",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Conflict",
+                  "status" : 409,
+                  "detail" : "Showtime has Bookings"
+                }
+              }
+            }
+          }
+        }
+      },
+      "TooManyRequests" : {
+        "description" : "Rate limit exceeded. Retry after the delay in Retry-After.",
+        "headers" : {
+          "Retry-After" : {
+            "description" : "Number of seconds to wait before retrying.",
+            "schema" : {
+              "type" : "integer",
+              "format" : "int32",
+              "example" : 60
+            }
+          }
+        },
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ValidationProblem"
+            },
+            "examples" : {
+              "rateLimited" : {
+                "summary" : "Rate limit exceeded",
+                "value" : {
+                  "type" : "about:blank",
+                  "title" : "Too Many Requests",
+                  "status" : 429,
+                  "detail" : "Too many requests. Please retry after 60 seconds."
                 }
               }
             }
@@ -2598,11 +2603,11 @@
         }
       }
     },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "type" : "http",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT"
       }
     }
   }

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.examples.Example;
+import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -76,6 +77,7 @@ public class OpenApiConfig {
 			addProblemResponses(openApi.getComponents());
 			documentRequiredStringMinimums(openApi);
 			documentBookedSeat(openApi);
+			documentCancellationRequest(openApi);
 			hideStorageLimits(openApi);
 			documentErrorResponses(openApi);
 		};
@@ -93,6 +95,30 @@ public class OpenApiConfig {
 		Schema<?> price = (Schema<?>) bookedSeat.getProperties().get("price");
 		price.setDescription("Seat price copied when the booking was created, in integer VND.");
 		price.setExample(100000);
+	}
+
+	/** Documents OpenAPI 3.1 conditional requirement: CancellationReason.OTHER requires a nonblank note. */
+	private static void documentCancellationRequest(OpenAPI openApi) {
+		Map<String, Schema> schemas = openApi.getComponents().getSchemas();
+		Schema<?> cancellation = schemas == null ? null : schemas.get("CancellationRequest");
+		if (cancellation == null) {
+			return;
+		}
+		Schema<?> otherReason = new Schema<>()._const("OTHER");
+		ObjectSchema ifOther = new ObjectSchema();
+		ifOther.addProperty("reason", otherReason);
+		ifOther.setRequired(List.of("reason"));
+
+		StringSchema requiredNote = new StringSchema();
+		requiredNote.setMinLength(1);
+		requiredNote.setMaxLength(200);
+		requiredNote.setPattern(".*\\S.*");
+		ObjectSchema thenRequireNote = new ObjectSchema();
+		thenRequireNote.addProperty("note", requiredNote);
+		thenRequireNote.setRequired(List.of("note"));
+
+		cancellation.setIf(ifOther);
+		cancellation.setThen(thenRequireNote);
 	}
 
 	private static void documentRequiredStringMinimums(OpenAPI openApi) {
@@ -208,6 +234,13 @@ public class OpenApiConfig {
 					"Customer already has a Pending Booking 550e8400-e29b-41d4-a716-446655440000")),
 				Map.entry("bookingState", example("Booking cannot be paid", 409,
 					"Booking is EXPIRED, only a Pending Booking can be paid")))));
+		ApiResponse tooManyRequests = problemResponse("Rate limit exceeded. Retry after the delay in Retry-After.",
+			Map.of("rateLimited", example("Rate limit exceeded", 429,
+				"Too many requests. Please retry after 60 seconds.")));
+		tooManyRequests.addHeaderObject("Retry-After", new Header()
+			.description("Number of seconds to wait before retrying.")
+			.schema(new IntegerSchema().example(60)));
+		components.addResponses("TooManyRequests", tooManyRequests);
 	}
 
 	private static ApiResponse problemResponse(String description, Map<String, Example> examples) {
@@ -246,6 +279,7 @@ public class OpenApiConfig {
 			case 403 -> "Forbidden";
 			case 404 -> "Not Found";
 			case 409 -> "Conflict";
+			case 429 -> "Too Many Requests";
 			default -> "Error";
 		});
 		value.put("status", status);
@@ -275,23 +309,27 @@ public class OpenApiConfig {
 			if (operation == null) {
 				return;
 			}
-			statuses.forEach(status -> {
-				if ("400".equals(status) && "POST /api/auth/login".equals(route)) {
-					operation.getResponses().putIfAbsent(status, new ApiResponse().$ref("#/components/responses/LoginBadRequest"));
-				} else {
-					String response = switch (status) {
-						case "400" -> "BadRequest";
-						case "401" -> "Unauthorized";
-						case "403" -> "Forbidden";
-						case "404" -> "NotFound";
-						case "409" -> "Conflict";
-						default -> throw new IllegalArgumentException("Unsupported documented status " + status);
-					};
-					operation.getResponses().putIfAbsent(status,
-						new ApiResponse().$ref("#/components/responses/" + response));
-				}
-			});
+			statuses.forEach(status -> addErrorResponse(route, status, operation));
+			addErrorResponse(route, "429", operation);
 		});
+	}
+
+	private static void addErrorResponse(String route, String status, io.swagger.v3.oas.models.Operation operation) {
+		if ("400".equals(status) && "POST /api/auth/login".equals(route)) {
+			operation.getResponses().putIfAbsent(status, new ApiResponse().$ref("#/components/responses/LoginBadRequest"));
+		} else {
+			String response = switch (status) {
+				case "400" -> "BadRequest";
+				case "401" -> "Unauthorized";
+				case "403" -> "Forbidden";
+				case "404" -> "NotFound";
+				case "409" -> "Conflict";
+				case "429" -> "TooManyRequests";
+				default -> throw new IllegalArgumentException("Unsupported documented status " + status);
+			};
+			operation.getResponses().putIfAbsent(status,
+				new ApiResponse().$ref("#/components/responses/" + response));
+		}
 	}
 
 	private static void hideStorageLimits(OpenAPI openApi) {

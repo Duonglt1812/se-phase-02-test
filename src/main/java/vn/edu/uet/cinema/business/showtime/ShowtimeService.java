@@ -119,12 +119,12 @@ public class ShowtimeService {
 
 	/** Its Pending Bookings are deleted and its Confirmed ones become Refunded. A blank note counts as no note. */
 	public Showtime cancel(UUID id, CancellationReason reason, String note, Instant now) {
+		if (note != null && note.length() > MAX_NOTE_LENGTH) {
+			throw new InvalidShowtimeException("A cancellation note has at most " + MAX_NOTE_LENGTH + " characters");
+		}
 		String given = note == null || note.isBlank() ? null : note;
 		if (reason == CancellationReason.OTHER && given == null) {
 			throw new InvalidShowtimeException("A Cancellation Reason of Other needs a note");
-		}
-		if (given != null && given.length() > MAX_NOTE_LENGTH) {
-			throw new InvalidShowtimeException("A cancellation note has at most " + MAX_NOTE_LENGTH + " characters");
 		}
 		Cancellation cancellation = new Cancellation(reason, given);
 		return switch (inventory.cancel(id, cancellation, now)) {

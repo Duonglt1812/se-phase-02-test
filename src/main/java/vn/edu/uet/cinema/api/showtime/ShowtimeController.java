@@ -127,7 +127,7 @@ class ShowtimeController {
 	record CancellationRequest(@NotNull(message = "Cancellation reason is required")
 		@Schema(description = "Cancellation reason. OTHER requires a nonblank note.", example = "EQUIPMENT_FAILURE")
 		CancellationReason reason,
-		@Schema(description = "Optional note (0–200 characters); required when reason is OTHER.", minLength = 0,
+		@Schema(description = "Optional note (0-200 characters); required when reason is OTHER.", minLength = 0,
 			maxLength = 200, example = "Projector failure") String note) {
 	}
 

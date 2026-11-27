@@ -41,7 +41,7 @@ class AuditoriumController {
 
 	@PostMapping("/api/cinemas/{id}/auditoriums")
 	@Operation(summary = "Create an auditorium", description = "Creates an auditorium under an existing cinema. Its name must "
-		+ "be unique within that cinema. Rows are A–Z (1–26); each row has a positive seat count. VIP and couple rows must "
+		+ "be unique within that cinema. Rows are A-Z (1-26); each row has a positive seat count. VIP and couple rows must "
 		+ "refer to distinct valid row letters. Missing cinema returns 404 and a duplicate name returns 409. Requires ADMIN.")
 	@ResponseStatus(HttpStatus.CREATED)
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
@@ -84,7 +84,7 @@ class AuditoriumController {
 		@Schema(description = "Nonblank name unique within its cinema.", minLength = 1, example = "Screen 1") String name,
 		@NotNull(message = "Rows are required") @Min(value = 1, message = "Rows must be at least 1")
 		@Max(value = 26, message = "Rows must be at most 26")
-		@Schema(description = "Lettered rows A–Z; choose 1 to 26 rows.", minimum = "1", maximum = "26", example = "12")
+		@Schema(description = "Lettered rows A-Z; choose 1 to 26 rows.", minimum = "1", maximum = "26", example = "12")
 		Integer rows,
 		@NotNull(message = "Seats per row are required") @Positive(message = "Seats per row must be positive")
 		@Schema(description = "Positive number of seats in each row.", minimum = "1", example = "10")
