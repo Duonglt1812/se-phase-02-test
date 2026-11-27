@@ -377,7 +377,7 @@ class OpenApiContractTest {
 		"vn.edu.uet.cinema.api.cinema",
 		"vn.edu.uet.cinema.api.movie",
 		"vn.edu.uet.cinema.api.showtime"})
-	@Import({ApiExceptionHandler.class, OpenApiConfig.class, SecurityConfig.class})
+	@Import({ApiExceptionHandler.class, OpenApiConfig.class, ProblemErrorController.class, SecurityConfig.class})
 	static class TestApplication {
 	}
 }
