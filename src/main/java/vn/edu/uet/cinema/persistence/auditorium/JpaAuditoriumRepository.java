@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.uet.cinema.business.ConflictException;
@@ -17,15 +18,25 @@ import vn.edu.uet.cinema.business.auditorium.AuditoriumRepository;
 class JpaAuditoriumRepository implements AuditoriumRepository {
 
 	private final AuditoriumEntityRepository jpa;
+	private final JdbcClient jdbc;
 
-	JpaAuditoriumRepository(AuditoriumEntityRepository jpa) {
+	JpaAuditoriumRepository(AuditoriumEntityRepository jpa, JdbcClient jdbc) {
 		this.jpa = jpa;
+		this.jdbc = jdbc;
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public List<Auditorium> findByCinemaId(UUID cinemaId) {
-		return jpa.findByCinemaId(cinemaId).stream().map(AuditoriumEntity::toAuditorium).toList();
+		return jdbc.sql("select id, cinema_id, name, rows, seats_per_row from auditorium where cinema_id = ? order by name, id")
+			.param(cinemaId)
+			.query((rs, rowNum) -> new Auditorium(
+				rs.getObject("id", UUID.class),
+				rs.getObject("cinema_id", UUID.class),
+				rs.getString("name"),
+				rs.getInt("rows"),
+				rs.getInt("seats_per_row"),
+				List.of()))
+			.list();
 	}
 
 	@Override

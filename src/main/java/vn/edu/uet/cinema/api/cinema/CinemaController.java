@@ -12,6 +12,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,6 +34,8 @@ import vn.edu.uet.cinema.config.OpenApiConfig;
 @RestController
 @Tag(name = "Cinemas", description = "Cinema catalogue management and public cinema reads.")
 class CinemaController {
+
+	private static final CacheControl CATALOGUE_CACHE = CacheControl.maxAge(60, TimeUnit.SECONDS).cachePublic();
 
 	private final CinemaService cinemas;
 
@@ -61,15 +65,15 @@ class CinemaController {
 			schema = @Schema(minimum = "1", maximum = "100", defaultValue = "20"))
 		@RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1")
 		@Max(value = PageQuery.MAX_SIZE, message = "Size must be at most 100") int size) {
-		return PaginationHeaders.ok(cinemas.list(new PageQuery(page, size)), CinemaResponse::from);
+		return PaginationHeaders.ok(cinemas.list(new PageQuery(page, size)), CinemaResponse::from, CATALOGUE_CACHE);
 	}
 
 	@GetMapping("/api/cinemas/{id}")
 	@Operation(summary = "Get a cinema", description = "Returns one cinema by UUID. The read is public; an unknown cinema "
 		+ "returns 404.")
-	CinemaResponse get(@Parameter(description = "Cinema UUID.", example = "550e8400-e29b-41d4-a716-446655440001")
+	ResponseEntity<CinemaResponse> get(@Parameter(description = "Cinema UUID.", example = "550e8400-e29b-41d4-a716-446655440001")
 		@PathVariable UUID id) {
-		return CinemaResponse.from(cinemas.get(id));
+		return ResponseEntity.ok().cacheControl(CATALOGUE_CACHE).body(CinemaResponse.from(cinemas.get(id)));
 	}
 
 	@PutMapping("/api/cinemas/{id}")

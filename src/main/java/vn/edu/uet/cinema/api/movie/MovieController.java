@@ -15,6 +15,8 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,6 +38,8 @@ import vn.edu.uet.cinema.config.OpenApiConfig;
 @RestController
 @Tag(name = "Movies", description = "Movie catalogue management and public movie reads.")
 class MovieController {
+
+	private static final CacheControl CATALOGUE_CACHE = CacheControl.maxAge(60, TimeUnit.SECONDS).cachePublic();
 
 	private final MovieService movies;
 
@@ -66,14 +70,14 @@ class MovieController {
 			schema = @Schema(minimum = "1", maximum = "100", defaultValue = "20"))
 		@RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1")
 		@Max(value = PageQuery.MAX_SIZE, message = "Size must be at most 100") int size) {
-		return PaginationHeaders.ok(movies.list(new PageQuery(page, size)), MovieResponse::from);
+		return PaginationHeaders.ok(movies.list(new PageQuery(page, size)), MovieResponse::from, CATALOGUE_CACHE);
 	}
 
 	@GetMapping("/api/movies/{id}")
 	@Operation(summary = "Get a movie", description = "Returns one movie by UUID. This read is public; an unknown movie returns 404.")
-	MovieResponse get(@Parameter(description = "Movie UUID.", example = "550e8400-e29b-41d4-a716-446655440002")
+	ResponseEntity<MovieResponse> get(@Parameter(description = "Movie UUID.", example = "550e8400-e29b-41d4-a716-446655440002")
 		@PathVariable UUID id) {
-		return MovieResponse.from(movies.get(id));
+		return ResponseEntity.ok().cacheControl(CATALOGUE_CACHE).body(MovieResponse.from(movies.get(id)));
 	}
 
 	@PutMapping("/api/movies/{id}")
