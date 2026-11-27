@@ -50,6 +50,22 @@ public interface SeatInventory {
 	 */
 	CancelOutcome cancel(UUID showtimeId, Cancellation cancellation, Instant now);
 
+	/**
+	 * Cancels the Showtime and, when {@code actorId} is non-null, appends an atomic audit entry in the same
+	 * database transaction (S4).
+	 */
+	default CancelOutcome cancel(UUID actorId, UUID showtimeId, Cancellation cancellation, Instant now) {
+		return cancel(showtimeId, cancellation, now);
+	}
+
 	/** Deletes the Showtime and, in the same transaction, its Holds that have lapsed at {@code now} (ADR 0004). */
 	DeleteOutcome delete(UUID showtimeId, Instant now);
+
+	/**
+	 * Deletes the Showtime and, when {@code actorId} is non-null, appends an atomic audit entry in the same
+	 * database transaction (S4).
+	 */
+	default DeleteOutcome delete(UUID actorId, UUID showtimeId, Instant now) {
+		return delete(showtimeId, now);
+	}
 }

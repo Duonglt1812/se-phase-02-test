@@ -15,6 +15,11 @@ import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
+import vn.edu.uet.cinema.business.audit.AuditAction;
+import vn.edu.uet.cinema.business.audit.AuditDetails;
+import vn.edu.uet.cinema.business.audit.AuditLog;
+import vn.edu.uet.cinema.business.audit.AuditLogRepository;
+import vn.edu.uet.cinema.business.audit.AuditTargetType;
 import vn.edu.uet.cinema.business.showtime.inventory.AbandonOutcome;
 import vn.edu.uet.cinema.business.showtime.inventory.Booking;
 import vn.edu.uet.cinema.business.showtime.inventory.BookingStatus;
@@ -39,31 +44,42 @@ public class JpaSeatInventory implements SeatInventory {
 	private final TransactionOperations transaction;
 	private final SeatInventoryStrategy strategy;
 	private final BookingMetrics metrics;
+	private final AuditLogRepository auditLogs;
 	private final Claim claim;
 
 	@Autowired
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction,
 		@Value("${app.seat-inventory.strategy:unique}") String strategyValue,
-		ObjectProvider<BookingMetrics> metricsProvider) {
+		ObjectProvider<BookingMetrics> metricsProvider,
+		ObjectProvider<AuditLogRepository> auditLogsProvider) {
 		this(jpa, transaction, SeatInventoryStrategy.from(strategyValue),
-			metricsProvider != null ? metricsProvider.getIfAvailable(BookingMetrics::noop) : BookingMetrics.noop());
+			metricsProvider != null ? metricsProvider.getIfAvailable(BookingMetrics::noop) : BookingMetrics.noop(),
+			auditLogsProvider != null ? auditLogsProvider.getIfAvailable(AuditLogRepository::noop)
+				: AuditLogRepository.noop());
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction, String strategyValue) {
-		this(jpa, transaction, SeatInventoryStrategy.from(strategyValue), BookingMetrics.noop());
+		this(jpa, transaction, SeatInventoryStrategy.from(strategyValue), BookingMetrics.noop(),
+			AuditLogRepository.noop());
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction,
 		SeatInventoryStrategy strategy) {
-		this(jpa, transaction, strategy, BookingMetrics.noop());
+		this(jpa, transaction, strategy, BookingMetrics.noop(), AuditLogRepository.noop());
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction,
 		SeatInventoryStrategy strategy, BookingMetrics metrics) {
+		this(jpa, transaction, strategy, metrics, AuditLogRepository.noop());
+	}
+
+	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction,
+		SeatInventoryStrategy strategy, BookingMetrics metrics, AuditLogRepository auditLogs) {
 		this.jpa = jpa;
 		this.transaction = transaction;
 		this.strategy = strategy;
 		this.metrics = metrics != null ? metrics : BookingMetrics.noop();
+		this.auditLogs = auditLogs != null ? auditLogs : AuditLogRepository.noop();
 		this.claim = switch (strategy) {
 			case UNIQUE, SINGLE_WRITER -> new UniqueClaim(jpa, transaction, this.metrics, strategy.value());
 			case SHOWTIME_LOCK -> new ShowtimeLockClaim(jpa, transaction, this.metrics, strategy.value());
@@ -72,7 +88,7 @@ public class JpaSeatInventory implements SeatInventory {
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction) {
-		this(jpa, transaction, SeatInventoryStrategy.UNIQUE, BookingMetrics.noop());
+		this(jpa, transaction, SeatInventoryStrategy.UNIQUE, BookingMetrics.noop(), AuditLogRepository.noop());
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction, Claim claim) {
@@ -80,6 +96,7 @@ public class JpaSeatInventory implements SeatInventory {
 		this.transaction = transaction;
 		this.strategy = SeatInventoryStrategy.UNIQUE;
 		this.metrics = BookingMetrics.noop();
+		this.auditLogs = AuditLogRepository.noop();
 		this.claim = claim;
 	}
 
@@ -306,25 +323,53 @@ public class JpaSeatInventory implements SeatInventory {
 	@Override
 	@Transactional
 	public CancelOutcome cancel(UUID showtimeId, Cancellation cancellation, Instant now) {
+		return cancel(null, showtimeId, cancellation, now);
+	}
+
+	@Override
+	@Transactional
+	public CancelOutcome cancel(UUID actorId, UUID showtimeId, Cancellation cancellation, Instant now) {
 		if (jpa.cancelShowtime(showtimeId, cancellation.reason().name(), cancellation.note(), now) == 0) {
 			return jpa.existsShowtime(showtimeId) ? new CancelOutcome.NotCancellable() : new CancelOutcome.NotFound();
 		}
 		// Delete before refunding: a payment that commits in between is then refunded, never left Confirmed.
-		jpa.deletePendingBookings(showtimeId);
-		jpa.refundConfirmedBookings(showtimeId);
+		int deletedPending = jpa.deletePendingBookings(showtimeId);
+		int refundedConfirmed = jpa.refundConfirmedBookings(showtimeId);
 		jpa.insertRefundTransactionsForShowtime(showtimeId, now);
+		if (actorId != null) {
+			String details = AuditDetails.builder()
+				.put("reason", cancellation.reason().name())
+				.put("note", cancellation.note())
+				.put("deletedPendingBookings", deletedPending)
+				.put("refundedConfirmedBookings", refundedConfirmed)
+				.toJson();
+			auditLogs.append(AuditLog.of(actorId, AuditAction.SHOWTIME_CANCELLED, AuditTargetType.SHOWTIME,
+				showtimeId, details, now));
+		}
 		return new CancelOutcome.Cancelled();
 	}
 
 	/** Not {@code @Transactional}: the failed transaction is rolled back before the outcome is returned. */
 	@Override
 	public DeleteOutcome delete(UUID showtimeId, Instant now) {
+		return delete(null, showtimeId, now);
+	}
+
+	@Override
+	public DeleteOutcome delete(UUID actorId, UUID showtimeId, Instant now) {
 		try {
 			return transaction.execute(status -> {
-				jpa.deleteLapsedHoldsOfShowtime(showtimeId, now);
+				int purgedLapsedHolds = jpa.deleteLapsedHoldsOfShowtime(showtimeId, now);
 				int rows = jpa.deleteShowtime(showtimeId);
 				if (rows == 0) {
 					return new DeleteOutcome.NotFound();
+				}
+				if (actorId != null) {
+					String details = AuditDetails.builder()
+						.put("purgedLapsedHolds", purgedLapsedHolds)
+						.toJson();
+					auditLogs.append(AuditLog.of(actorId, AuditAction.SHOWTIME_DELETED, AuditTargetType.SHOWTIME,
+						showtimeId, details, now));
 				}
 				return new DeleteOutcome.Deleted();
 			});

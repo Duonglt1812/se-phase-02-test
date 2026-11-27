@@ -107,7 +107,7 @@ interface BookingEntityRepository extends JpaRepository<BookingEntity, UUID> {
 	/** ADR 0004: lapsed Holds never block deleting their Showtime. booked_seat rows go by ON DELETE CASCADE. */
 	@Modifying
 	@Query(nativeQuery = true, value = "delete from booking b where b.showtime_id = :showtimeId and " + LAPSED_HOLD)
-	void deleteLapsedHoldsOfShowtime(UUID showtimeId, Instant now);
+	int deleteLapsedHoldsOfShowtime(UUID showtimeId, Instant now);
 
 	/** Fails on {@code fk_booking_showtime} while any Booking of it is left. */
 	@Modifying
@@ -124,13 +124,13 @@ interface BookingEntityRepository extends JpaRepository<BookingEntity, UUID> {
 	/** Expired ones too: they are stored as PENDING. booked_seat rows go by ON DELETE CASCADE. */
 	@Modifying
 	@Query(nativeQuery = true, value = "delete from booking where showtime_id = :showtimeId and status = 'PENDING'")
-	void deletePendingBookings(UUID showtimeId);
+	int deletePendingBookings(UUID showtimeId);
 
 	@Modifying
 	@Query(nativeQuery = true, value = """
 		update booking set status = 'REFUNDED' where showtime_id = :showtimeId and status = 'CONFIRMED'
 		""")
-	void refundConfirmedBookings(UUID showtimeId);
+	int refundConfirmedBookings(UUID showtimeId);
 
 	@Query(nativeQuery = true, value = """
 		select booking_id as bookingId, status as status
