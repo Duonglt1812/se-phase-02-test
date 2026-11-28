@@ -17,7 +17,10 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,6 +38,8 @@ import vn.edu.uet.cinema.config.OpenApiConfig;
 @RestController
 @Tag(name = "Auditoriums", description = "Cinema auditoriums, seat layouts, and public seat reads.")
 class AuditoriumController {
+
+	private static final CacheControl CATALOGUE_CACHE = CacheControl.maxAge(60, TimeUnit.SECONDS).cachePublic();
 
 	private final AuditoriumService auditoriums;
 
@@ -58,17 +63,18 @@ class AuditoriumController {
 	@GetMapping("/api/cinemas/{id}/auditoriums")
 	@Operation(summary = "List a cinema's auditoriums", description = "Returns auditorium summaries for an existing cinema; "
 		+ "seat details are omitted. Missing cinema returns 404. This catalogue read is public.")
-	List<AuditoriumResponse> list(
+	ResponseEntity<List<AuditoriumResponse>> list(
 		@Parameter(description = "Cinema UUID.", example = "550e8400-e29b-41d4-a716-446655440001") @PathVariable UUID id) {
-		return auditoriums.list(id).stream().map(AuditoriumResponse::summary).toList();
+		return ResponseEntity.ok().cacheControl(CATALOGUE_CACHE)
+			.body(auditoriums.list(id).stream().map(AuditoriumResponse::summary).toList());
 	}
 
 	@GetMapping("/api/auditoriums/{id}")
 	@Operation(summary = "Get an auditorium", description = "Returns an auditorium and its generated seats. This catalogue read "
 		+ "is public; an unknown auditorium returns 404.")
-	AuditoriumResponse get(
+	ResponseEntity<AuditoriumResponse> get(
 		@Parameter(description = "Auditorium UUID.", example = "550e8400-e29b-41d4-a716-446655440003") @PathVariable UUID id) {
-		return AuditoriumResponse.detail(auditoriums.get(id));
+		return ResponseEntity.ok().cacheControl(CATALOGUE_CACHE).body(AuditoriumResponse.detail(auditoriums.get(id)));
 	}
 
 	@DeleteMapping("/api/auditoriums/{id}")

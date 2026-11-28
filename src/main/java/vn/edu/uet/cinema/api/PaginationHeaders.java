@@ -2,6 +2,7 @@ package vn.edu.uet.cinema.api;
 
 import java.util.List;
 import java.util.function.Function;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import vn.edu.uet.cinema.business.PageSlice;
 
@@ -17,12 +18,20 @@ public final class PaginationHeaders {
 	}
 
 	public static <T, R> ResponseEntity<List<R>> ok(PageSlice<T> slice, Function<? super T, ? extends R> mapper) {
+		return ok(slice, mapper, null);
+	}
+
+	public static <T, R> ResponseEntity<List<R>> ok(PageSlice<T> slice, Function<? super T, ? extends R> mapper,
+		CacheControl cacheControl) {
 		List<R> body = slice.items().stream().<R>map(mapper).toList();
-		return ResponseEntity.ok()
+		ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
 			.header(TOTAL_COUNT, Long.toString(slice.totalElements()))
 			.header(PAGE, Integer.toString(slice.page()))
 			.header(PAGE_SIZE, Integer.toString(slice.size()))
-			.header(TOTAL_PAGES, Integer.toString(slice.totalPages()))
-			.body(body);
+			.header(TOTAL_PAGES, Integer.toString(slice.totalPages()));
+		if (cacheControl != null) {
+			builder.cacheControl(cacheControl);
+		}
+		return builder.body(body);
 	}
 }

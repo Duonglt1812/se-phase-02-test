@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.uet.cinema.business.ConflictException;
@@ -21,27 +22,38 @@ import vn.edu.uet.cinema.business.auditorium.AuditoriumRepository;
 class JpaAuditoriumRepository implements AuditoriumRepository {
 
 	private final AuditoriumEntityRepository jpa;
+	private final JdbcClient jdbc;
 	private final AuditLogRepository auditLogs;
 
-	JpaAuditoriumRepository(AuditoriumEntityRepository jpa) {
-		this(jpa, AuditLogRepository.noop());
+	JpaAuditoriumRepository(AuditoriumEntityRepository jpa, JdbcClient jdbc) {
+		this(jpa, jdbc, AuditLogRepository.noop());
 	}
 
 	@Autowired
-	JpaAuditoriumRepository(AuditoriumEntityRepository jpa, ObjectProvider<AuditLogRepository> auditLogsProvider) {
-		this(jpa, auditLogsProvider != null ? auditLogsProvider.getIfAvailable(AuditLogRepository::noop)
+	JpaAuditoriumRepository(AuditoriumEntityRepository jpa, JdbcClient jdbc,
+		ObjectProvider<AuditLogRepository> auditLogsProvider) {
+		this(jpa, jdbc, auditLogsProvider != null ? auditLogsProvider.getIfAvailable(AuditLogRepository::noop)
 			: AuditLogRepository.noop());
 	}
 
-	JpaAuditoriumRepository(AuditoriumEntityRepository jpa, AuditLogRepository auditLogs) {
+	JpaAuditoriumRepository(AuditoriumEntityRepository jpa, JdbcClient jdbc, AuditLogRepository auditLogs) {
 		this.jpa = jpa;
+		this.jdbc = jdbc;
 		this.auditLogs = auditLogs != null ? auditLogs : AuditLogRepository.noop();
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public List<Auditorium> findByCinemaId(UUID cinemaId) {
-		return jpa.findByCinemaId(cinemaId).stream().map(AuditoriumEntity::toAuditorium).toList();
+		return jdbc.sql("select id, cinema_id, name, rows, seats_per_row from auditorium where cinema_id = ? order by name, id")
+			.param(cinemaId)
+			.query((rs, rowNum) -> new Auditorium(
+				rs.getObject("id", UUID.class),
+				rs.getObject("cinema_id", UUID.class),
+				rs.getString("name"),
+				rs.getInt("rows"),
+				rs.getInt("seats_per_row"),
+				List.of()))
+			.list();
 	}
 
 	@Override
