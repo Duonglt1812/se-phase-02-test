@@ -20,6 +20,7 @@ spring:
       hibernate.jdbc.batch_size: 20
       hibernate.order_inserts: true
       hibernate.order_updates: true
+      hibernate.query.in_clause_parameter_padding: true
   mvc:
     problemdetails:
       enabled: true
