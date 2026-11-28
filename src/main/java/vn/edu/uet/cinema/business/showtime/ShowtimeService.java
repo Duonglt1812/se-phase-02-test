@@ -33,6 +33,7 @@ public class ShowtimeService {
 	private final SeatInventory inventory;
 	private final Map<UUID, List<Seat>> layouts = new ConcurrentHashMap<>();
 	private final Map<UUID, Map<UUID, Seat>> seatsByIdCache = new ConcurrentHashMap<>();
+	private final Map<UUID, Showtime> scheduledCache = new ConcurrentHashMap<>();
 
 	public ShowtimeService(MovieService movies, AuditoriumService auditoriums, ShowtimeRepository showtimes,
 		SeatInventory inventory) {
@@ -74,17 +75,30 @@ public class ShowtimeService {
 			.toJson();
 		AuditLog auditLog = AuditLog.of(actorId, AuditAction.SHOWTIME_CREATED, AuditTargetType.SHOWTIME,
 			showtime.id(), details, timestamp);
-		return showtimes.save(showtime, auditLog);
+		Showtime saved = showtimes.save(showtime, auditLog);
+		if (saved.status() == ShowtimeStatus.SCHEDULED) {
+			scheduledCache.put(saved.id(), saved);
+		}
+		return saved;
 	}
 
 	public Showtime get(UUID id) {
-		return showtimes.findById(id).orElseThrow(() -> new NotFoundException("Showtime not found"));
+		Showtime cached = scheduledCache.get(id);
+		if (cached != null) {
+			return cached;
+		}
+		Showtime showtime = showtimes.findById(id).orElseThrow(() -> new NotFoundException("Showtime not found"));
+		if (showtime.status() == ShowtimeStatus.SCHEDULED) {
+			scheduledCache.putIfAbsent(id, showtime);
+		}
+		return showtime;
 	}
 
 	/** A Showtime whose Seats can still be chosen: a Cancelled one is a conflict. */
 	public Showtime getScheduled(UUID id) {
 		Showtime showtime = get(id);
 		if (showtime.status() == ShowtimeStatus.CANCELLED) {
+			scheduledCache.remove(id);
 			throw new ConflictException("Showtime is Cancelled");
 		}
 		return showtime;
@@ -158,6 +172,7 @@ public class ShowtimeService {
 		CancelOutcome outcome = actorId == null
 			? inventory.cancel(id, cancellation, now)
 			: inventory.cancel(actorId, id, cancellation, now);
+		scheduledCache.remove(id);
 		return switch (outcome) {
 			case CancelOutcome.Cancelled cancelled -> {
 				Showtime showtime = get(id);
@@ -177,6 +192,7 @@ public class ShowtimeService {
 	}
 
 	public void delete(UUID actorId, UUID id, Instant now) {
+		scheduledCache.remove(id);
 		DeleteOutcome outcome = actorId == null
 			? inventory.delete(id, now)
 			: inventory.delete(actorId, id, now);

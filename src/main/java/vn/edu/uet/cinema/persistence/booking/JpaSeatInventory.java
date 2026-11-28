@@ -2,7 +2,13 @@ package vn.edu.uet.cinema.persistence.booking;
 
 import static vn.edu.uet.cinema.persistence.ConstraintViolations.hasConstraint;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
@@ -21,6 +28,7 @@ import vn.edu.uet.cinema.business.audit.AuditLog;
 import vn.edu.uet.cinema.business.audit.AuditLogRepository;
 import vn.edu.uet.cinema.business.audit.AuditTargetType;
 import vn.edu.uet.cinema.business.showtime.inventory.AbandonOutcome;
+import vn.edu.uet.cinema.business.showtime.inventory.BookedSeat;
 import vn.edu.uet.cinema.business.showtime.inventory.Booking;
 import vn.edu.uet.cinema.business.showtime.inventory.BookingStatus;
 import vn.edu.uet.cinema.business.showtime.inventory.CancelOutcome;
@@ -40,46 +48,109 @@ import vn.edu.uet.cinema.config.SeatInventoryStrategy;
 @Repository("jpaSeatInventory")
 public class JpaSeatInventory implements SeatInventory {
 
+	private static final String FIND_OCCUPIED_SEATS_SQL = """
+		select s.seat_id, b.status from booked_seat s join booking b on b.id = s.booking_id
+		where s.showtime_id = ? and
+		(b.status in ('CONFIRMED', 'REFUNDED') or (b.status = 'PENDING' and b.expires_at > ?))
+		""";
+
+	private static final String PAY_CONFIRM_AND_INSERT_SQL = """
+		WITH updated AS (
+			UPDATE booking
+			SET status = 'CONFIRMED'
+			WHERE id = ? AND customer_id = ? AND status = 'PENDING' AND expires_at > ?
+			RETURNING id, customer_id, showtime_id, created_at, expires_at
+		),
+		seats AS (
+			SELECT seat_id, price FROM booked_seat WHERE booking_id = ?
+		),
+		ins_tx AS (
+			INSERT INTO payment_transaction (id, booking_id, customer_id, type, status, amount, idempotency_key, created_at, updated_at)
+			SELECT ?, u.id, u.customer_id, 'PAYMENT', 'COMPLETED', coalesce((SELECT sum(price) FROM seats), 0), cast(? as text), ?, ?
+			FROM updated u
+		)
+		SELECT u.id, u.customer_id, u.showtime_id, u.created_at, u.expires_at, s.seat_id, s.price
+		FROM updated u
+		LEFT JOIN seats s ON true
+		""";
+
+	private record OccupiedSeatRow(UUID seatId, String status) {}
+
+	private static OccupiedSeatRow mapOccupiedSeat(ResultSet rs, int rowNum) throws SQLException {
+		return new OccupiedSeatRow(rs.getObject("seat_id", UUID.class), rs.getString("status"));
+	}
+
+	private record PaidBookingRow(
+		UUID id,
+		UUID customerId,
+		UUID showtimeId,
+		Instant createdAt,
+		Instant expiresAt,
+		UUID seatId,
+		Long price
+	) {}
+
+	private static PaidBookingRow mapPaidBookingRow(ResultSet rs, int rowNum) throws SQLException {
+		return new PaidBookingRow(
+			rs.getObject("id", UUID.class),
+			rs.getObject("customer_id", UUID.class),
+			rs.getObject("showtime_id", UUID.class),
+			rs.getObject("created_at", OffsetDateTime.class).toInstant(),
+			rs.getObject("expires_at", OffsetDateTime.class).toInstant(),
+			rs.getObject("seat_id", UUID.class),
+			rs.getObject("price") != null ? rs.getLong("price") : null
+		);
+	}
+
 	private final BookingEntityRepository jpa;
 	private final TransactionOperations transaction;
 	private final SeatInventoryStrategy strategy;
 	private final BookingMetrics metrics;
 	private final AuditLogRepository auditLogs;
+	private final JdbcClient jdbc;
 	private final Claim claim;
 
 	@Autowired
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction,
 		@Value("${app.seat-inventory.strategy:unique}") String strategyValue,
 		ObjectProvider<BookingMetrics> metricsProvider,
-		ObjectProvider<AuditLogRepository> auditLogsProvider) {
+		ObjectProvider<AuditLogRepository> auditLogsProvider,
+		ObjectProvider<JdbcClient> jdbcProvider) {
 		this(jpa, transaction, SeatInventoryStrategy.from(strategyValue),
 			metricsProvider != null ? metricsProvider.getIfAvailable(BookingMetrics::noop) : BookingMetrics.noop(),
 			auditLogsProvider != null ? auditLogsProvider.getIfAvailable(AuditLogRepository::noop)
-				: AuditLogRepository.noop());
+				: AuditLogRepository.noop(),
+			jdbcProvider != null ? jdbcProvider.getIfAvailable() : null);
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction, String strategyValue) {
 		this(jpa, transaction, SeatInventoryStrategy.from(strategyValue), BookingMetrics.noop(),
-			AuditLogRepository.noop());
+			AuditLogRepository.noop(), null);
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction,
 		SeatInventoryStrategy strategy) {
-		this(jpa, transaction, strategy, BookingMetrics.noop(), AuditLogRepository.noop());
+		this(jpa, transaction, strategy, BookingMetrics.noop(), AuditLogRepository.noop(), null);
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction,
 		SeatInventoryStrategy strategy, BookingMetrics metrics) {
-		this(jpa, transaction, strategy, metrics, AuditLogRepository.noop());
+		this(jpa, transaction, strategy, metrics, AuditLogRepository.noop(), null);
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction,
 		SeatInventoryStrategy strategy, BookingMetrics metrics, AuditLogRepository auditLogs) {
+		this(jpa, transaction, strategy, metrics, auditLogs, null);
+	}
+
+	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction,
+		SeatInventoryStrategy strategy, BookingMetrics metrics, AuditLogRepository auditLogs, JdbcClient jdbc) {
 		this.jpa = jpa;
 		this.transaction = transaction;
 		this.strategy = strategy;
 		this.metrics = metrics != null ? metrics : BookingMetrics.noop();
 		this.auditLogs = auditLogs != null ? auditLogs : AuditLogRepository.noop();
+		this.jdbc = jdbc;
 		this.claim = switch (strategy) {
 			case UNIQUE, SINGLE_WRITER -> new UniqueClaim(jpa, transaction, this.metrics, strategy.value());
 			case SHOWTIME_LOCK -> new ShowtimeLockClaim(jpa, transaction, this.metrics, strategy.value());
@@ -88,7 +159,7 @@ public class JpaSeatInventory implements SeatInventory {
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction) {
-		this(jpa, transaction, SeatInventoryStrategy.UNIQUE, BookingMetrics.noop(), AuditLogRepository.noop());
+		this(jpa, transaction, SeatInventoryStrategy.UNIQUE, BookingMetrics.noop(), AuditLogRepository.noop(), null);
 	}
 
 	public JpaSeatInventory(BookingEntityRepository jpa, TransactionOperations transaction, Claim claim) {
@@ -97,6 +168,7 @@ public class JpaSeatInventory implements SeatInventory {
 		this.strategy = SeatInventoryStrategy.UNIQUE;
 		this.metrics = BookingMetrics.noop();
 		this.auditLogs = AuditLogRepository.noop();
+		this.jdbc = null;
 		this.claim = claim;
 	}
 
@@ -179,42 +251,63 @@ public class JpaSeatInventory implements SeatInventory {
 						}
 					}
 
-					int updated = metrics.timeDbQuery("pay", "confirm_update", strategy.value(),
-						() -> jpa.confirm(bookingId, customerId, now));
-					if (updated == 1) {
-						Optional<Booking> confirmedOpt = preloadedBooking != null
-							? Optional.of(preloadedBooking.confirmed())
-							: metrics.timeDbQuery("pay", "reload_booking", strategy.value(),
-								() -> jpa.findByIdWithSeats(bookingId)).map(BookingEntity::toBooking);
-						if (confirmedOpt.isEmpty()) {
-							result = new PayOutcome.Gone();
-						} else {
-							Booking confirmed = confirmedOpt.get();
+					if (preloadedBooking != null) {
+						int updated = metrics.timeDbQuery("pay", "confirm_update", strategy.value(),
+							() -> jpa.confirm(bookingId, customerId, now));
+						if (updated == 1) {
+							Booking confirmed = preloadedBooking.confirmed();
 							metrics.timeDbQuery("pay", "record_payment_tx", strategy.value(),
 								() -> jpa.insertPaymentTransaction(UUID.randomUUID(), confirmed.id(), customerId,
 									"PAYMENT", "COMPLETED", confirmed.totalPrice(), idempotencyKey, now));
 							result = new PayOutcome.Paid(confirmed);
+						} else {
+							result = fallbackNotPaid(customerId, bookingId, now, idempotencyKey);
+						}
+					} else if (jdbc != null) {
+						UUID txId = UUID.randomUUID();
+						OffsetDateTime nowOffset = OffsetDateTime.ofInstant(now, ZoneOffset.UTC);
+						List<PaidBookingRow> rows = metrics.timeDbQuery("pay", "confirm_update", strategy.value(),
+							() -> jdbc.sql(PAY_CONFIRM_AND_INSERT_SQL)
+								.param(1, bookingId)
+								.param(2, customerId)
+								.param(3, nowOffset)
+								.param(4, bookingId)
+								.param(5, txId)
+								.param(6, idempotencyKey)
+								.param(7, nowOffset)
+								.param(8, nowOffset)
+								.query(JpaSeatInventory::mapPaidBookingRow)
+								.list());
+
+						if (!rows.isEmpty()) {
+							PaidBookingRow first = rows.get(0);
+							List<BookedSeat> seats = rows.stream()
+								.filter(r -> r.seatId() != null)
+								.map(r -> new BookedSeat(r.seatId(), r.price() != null ? r.price() : 0L))
+								.toList();
+							Booking confirmed = new Booking(first.id(), first.customerId(), first.showtimeId(),
+								BookingStatus.CONFIRMED, first.createdAt(), first.expiresAt(), seats);
+							result = new PayOutcome.Paid(confirmed);
+						} else {
+							result = fallbackNotPaid(customerId, bookingId, now, idempotencyKey);
 						}
 					} else {
-						Optional<Booking> currentOpt = metrics.timeDbQuery("pay", "reload_booking", strategy.value(),
-							() -> jpa.findByIdWithSeats(bookingId)).map(BookingEntity::toBooking);
-						if (currentOpt.isEmpty() || !currentOpt.get().customerId().equals(customerId)) {
-							result = new PayOutcome.Gone();
-						} else {
-							Booking current = currentOpt.get();
-							BookingStatus currentStatus = current.statusAt(now);
-							if (currentStatus == BookingStatus.CONFIRMED) {
-								result = new PayOutcome.AlreadyPaid(current);
+						int updated = metrics.timeDbQuery("pay", "confirm_update", strategy.value(),
+							() -> jpa.confirm(bookingId, customerId, now));
+						if (updated == 1) {
+							Optional<Booking> confirmedOpt = metrics.timeDbQuery("pay", "reload_booking", strategy.value(),
+								() -> jpa.findByIdWithSeats(bookingId)).map(BookingEntity::toBooking);
+							if (confirmedOpt.isEmpty()) {
+								result = new PayOutcome.Gone();
 							} else {
-								if (currentStatus == BookingStatus.EXPIRED) {
-									String lateKey = idempotencyKey != null ? idempotencyKey
-										: "late-refund:" + current.id();
-									metrics.timeDbQuery("pay", "record_late_refund_tx", strategy.value(),
-										() -> jpa.insertLatePaymentRefund(UUID.randomUUID(), current.id(), customerId,
-											current.totalPrice(), lateKey, now));
-								}
-								result = new PayOutcome.NotPayable(currentStatus);
+								Booking confirmed = confirmedOpt.get();
+								metrics.timeDbQuery("pay", "record_payment_tx", strategy.value(),
+									() -> jpa.insertPaymentTransaction(UUID.randomUUID(), confirmed.id(), customerId,
+										"PAYMENT", "COMPLETED", confirmed.totalPrice(), idempotencyKey, now));
+								result = new PayOutcome.Paid(confirmed);
 							}
+						} else {
+							result = fallbackNotPaid(customerId, bookingId, now, idempotencyKey);
 						}
 					}
 					rollbackOnly[0] = status.isRollbackOnly();
@@ -237,6 +330,27 @@ public class JpaSeatInventory implements SeatInventory {
 		} finally {
 			metrics.recordOperation("pay", strategy.value(), payOutcomeTag(outcome), System.nanoTime() - start);
 		}
+	}
+
+	private PayOutcome fallbackNotPaid(UUID customerId, UUID bookingId, Instant now, String idempotencyKey) {
+		Optional<Booking> currentOpt = metrics.timeDbQuery("pay", "reload_booking", strategy.value(),
+			() -> jpa.findByIdWithSeats(bookingId)).map(BookingEntity::toBooking);
+		if (currentOpt.isEmpty() || !currentOpt.get().customerId().equals(customerId)) {
+			return new PayOutcome.Gone();
+		}
+		Booking current = currentOpt.get();
+		BookingStatus currentStatus = current.statusAt(now);
+		if (currentStatus == BookingStatus.CONFIRMED) {
+			return new PayOutcome.AlreadyPaid(current);
+		}
+		if (currentStatus == BookingStatus.EXPIRED) {
+			String lateKey = idempotencyKey != null ? idempotencyKey
+				: "late-refund:" + current.id();
+			metrics.timeDbQuery("pay", "record_late_refund_tx", strategy.value(),
+				() -> jpa.insertLatePaymentRefund(UUID.randomUUID(), current.id(), customerId,
+					current.totalPrice(), lateKey, now));
+		}
+		return new PayOutcome.NotPayable(currentStatus);
 	}
 
 	private PayOutcome resolveIdempotencyRace(UUID customerId, UUID bookingId, String idempotencyKey, Instant now) {
@@ -313,10 +427,23 @@ public class JpaSeatInventory implements SeatInventory {
 	@Override
 	public Map<UUID, SeatStatus> statuses(UUID showtimeId, Instant now) {
 		return metrics.timeDbQuery("statuses", "find_occupied_seats", strategy.value(),
-			() -> jpa.findOccupiedSeats(showtimeId, now)).stream().collect(Collectors.toMap(
-			BookingEntityRepository.OccupiedSeat::getSeatId,
-			seat -> BookingStatus.valueOf(seat.getStatus()) == BookingStatus.PENDING ? SeatStatus.HELD
-				: SeatStatus.SOLD));
+			() -> {
+				if (jdbc == null) {
+					return jpa.findOccupiedSeats(showtimeId, now).stream().collect(Collectors.toMap(
+						BookingEntityRepository.OccupiedSeat::getSeatId,
+						seat -> BookingStatus.valueOf(seat.getStatus()) == BookingStatus.PENDING ? SeatStatus.HELD
+							: SeatStatus.SOLD));
+				}
+				Map<UUID, SeatStatus> map = new HashMap<>();
+				jdbc.sql(FIND_OCCUPIED_SEATS_SQL)
+					.param(1, showtimeId)
+					.param(2, OffsetDateTime.ofInstant(now, ZoneOffset.UTC))
+					.query(JpaSeatInventory::mapOccupiedSeat)
+					.list()
+					.forEach(row -> map.put(row.seatId(),
+						"PENDING".equals(row.status()) ? SeatStatus.HELD : SeatStatus.SOLD));
+				return map;
+			});
 	}
 
 	/** The order of ADR 0005; see it before changing anything here. */
