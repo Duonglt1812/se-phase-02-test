@@ -232,7 +232,14 @@ public class SingleWriterSeatInventory implements SeatInventory {
 
 	@Override
 	public CancelOutcome cancel(UUID showtimeId, Cancellation cancellation, Instant now) {
-		CancelOutcome outcome = delegate.cancel(showtimeId, cancellation, now);
+		return cancel(null, showtimeId, cancellation, now);
+	}
+
+	@Override
+	public CancelOutcome cancel(UUID actorId, UUID showtimeId, Cancellation cancellation, Instant now) {
+		CancelOutcome outcome = actorId == null
+			? delegate.cancel(showtimeId, cancellation, now)
+			: delegate.cancel(actorId, showtimeId, cancellation, now);
 		AtomicLong version = versions.get(showtimeId);
 		if (version != null) {
 			version.incrementAndGet();
@@ -243,7 +250,14 @@ public class SingleWriterSeatInventory implements SeatInventory {
 
 	@Override
 	public DeleteOutcome delete(UUID showtimeId, Instant now) {
-		DeleteOutcome outcome = delegate.delete(showtimeId, now);
+		return delete(null, showtimeId, now);
+	}
+
+	@Override
+	public DeleteOutcome delete(UUID actorId, UUID showtimeId, Instant now) {
+		DeleteOutcome outcome = actorId == null
+			? delegate.delete(showtimeId, now)
+			: delegate.delete(actorId, showtimeId, now);
 		AtomicLong version = versions.get(showtimeId);
 		if (version != null) {
 			version.incrementAndGet();

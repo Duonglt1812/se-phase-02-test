@@ -43,6 +43,10 @@ public class OpenApiConfig {
 		Map.entry("POST /api/auth/refresh", Set.of("400", "401")),
 		Map.entry("POST /api/auth/logout", Set.of("400", "401")),
 		Map.entry("GET /api/me", Set.of("401", "404")),
+		Map.entry("POST /api/me/password", Set.of("400", "401", "404")),
+		Map.entry("POST /api/admin/accounts", Set.of("400", "401", "403", "409")),
+		Map.entry("GET /api/admin/accounts", Set.of("400", "401", "403")),
+		Map.entry("GET /api/admin/audit-logs", Set.of("400", "401", "403")),
 		Map.entry("POST /api/cinemas", Set.of("400", "401", "403")),
 		Map.entry("GET /api/cinemas", Set.of("400", "401")),
 		Map.entry("GET /api/cinemas/{id}", Set.of("400", "401", "404")),
@@ -102,6 +106,8 @@ public class OpenApiConfig {
 		}
 		Map<String, Set<String>> nonblankFields = Map.of(
 			"RegisterRequest", Set.of("email", "fullName"),
+			"CreateAdminRequest", Set.of("email", "fullName"),
+			"ChangePasswordRequest", Set.of("currentPassword"),
 			"LoginRequest", Set.of("email", "password"),
 			"RefreshRequest", Set.of("refreshToken"),
 			"CinemaRequest", Set.of("name", "address"),
@@ -297,6 +303,8 @@ public class OpenApiConfig {
 	private static void hideStorageLimits(OpenAPI openApi) {
 		Map<String, Set<String>> storageLimits = Map.of(
 			"RegisterRequest", Set.of("email", "password", "fullName"),
+			"CreateAdminRequest", Set.of("email", "password", "fullName"),
+			"ChangePasswordRequest", Set.of("newPassword"),
 			"CinemaRequest", Set.of("name"),
 			"AuditoriumRequest", Set.of("name"),
 			"MovieRequest", Set.of("title", "genre"));

@@ -37,8 +37,8 @@ Service đọc cấu hình từ biến môi trường. Các secret không có gi
 | `JWT_SECRET` | ✓ | | Khóa ký HS256, tối thiểu 32 byte (`openssl rand -base64 32`) |
 | `JWT_ACCESS_TOKEN_TTL` | | `15m` | Thời hạn Access JWT ngắn hạn (định dạng Spring Duration) |
 | `JWT_REFRESH_TOKEN_TTL` | | `7d` | Thời hạn Refresh Token xoay vòng (định dạng Spring Duration) |
-| `ADMIN_EMAIL` | | `admin@cinema.local` | Tài khoản Admin, được tạo khi khởi động nếu chưa có |
-| `ADMIN_PASSWORD` | ✓ | | Mật khẩu Admin, được đặt lại mỗi lần khởi động; muốn đổi thì sửa biến rồi khởi động lại |
+| `ADMIN_EMAIL` | | `admin@cinema.local` | Tài khoản Admin khởi tạo ban đầu, được seed khi khởi động nếu chưa tồn tại |
+| `ADMIN_PASSWORD` | ✓ | | Mật khẩu ban đầu dùng khi seed tài khoản Admin khởi tạo; đổi mật khẩu trực tuyến qua `POST /api/me/password` không cần khởi động lại và tạo thêm Admin qua `POST /api/admin/accounts` |
 
 Thiếu `JWT_SECRET` hoặc `ADMIN_PASSWORD` thì ứng dụng không khởi động. Thiếu `DB_PASSWORD` thì ứng dụng không kết nối được database. Docker Compose kiểm tra cả ba biến trước khi chạy bất cứ thứ gì.
 

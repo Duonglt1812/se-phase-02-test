@@ -86,6 +86,7 @@ public class SecurityConfig {
 				}
 				auth.requestMatchers(GET, CATALOGUE).permitAll()
 					.requestMatchers(CATALOGUE).hasRole("ADMIN")
+					.requestMatchers("/api/admin/**").hasRole("ADMIN")
 					.requestMatchers("/api/bookings/**").hasRole("CUSTOMER")
 					.requestMatchers("/actuator/metrics/**").hasRole("ADMIN")
 					.anyRequest().authenticated();

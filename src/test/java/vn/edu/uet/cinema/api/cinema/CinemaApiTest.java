@@ -149,6 +149,26 @@ class CinemaApiTest {
 		}
 	}
 
+	@Test
+	void rejectsJsonScalarsForCinemaStringFields() throws Exception {
+		String admin = token();
+		mvc.perform(post("/api/cinemas").header("Authorization", "Bearer " + admin)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Cinema Alpha\",\"address\":true}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.errors[0].field").value("address"))
+			.andExpect(jsonPath("$.errors[0].message").value("Must be a string."));
+
+		mvc.perform(post("/api/cinemas").header("Authorization", "Bearer " + admin)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":123,\"address\":\"1 Alpha Street\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.errors[0].field").value("name"))
+			.andExpect(jsonPath("$.errors[0].message").value("Must be a string."));
+	}
+
 	private List<String> allCinemaIds() throws Exception {
 		List<String> ids = new ArrayList<>();
 		int page = 0;
