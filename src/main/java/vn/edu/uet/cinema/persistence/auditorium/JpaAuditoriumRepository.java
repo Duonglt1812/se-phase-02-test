@@ -5,10 +5,14 @@ import static vn.edu.uet.cinema.persistence.ConstraintViolations.hasConstraint;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.uet.cinema.business.ConflictException;
+import vn.edu.uet.cinema.business.audit.AuditLog;
+import vn.edu.uet.cinema.business.audit.AuditLogRepository;
 import vn.edu.uet.cinema.business.auditorium.Auditorium;
 import vn.edu.uet.cinema.business.auditorium.AuditoriumNameTakenException;
 import vn.edu.uet.cinema.business.auditorium.AuditoriumRepository;
@@ -17,9 +21,21 @@ import vn.edu.uet.cinema.business.auditorium.AuditoriumRepository;
 class JpaAuditoriumRepository implements AuditoriumRepository {
 
 	private final AuditoriumEntityRepository jpa;
+	private final AuditLogRepository auditLogs;
 
 	JpaAuditoriumRepository(AuditoriumEntityRepository jpa) {
+		this(jpa, AuditLogRepository.noop());
+	}
+
+	@Autowired
+	JpaAuditoriumRepository(AuditoriumEntityRepository jpa, ObjectProvider<AuditLogRepository> auditLogsProvider) {
+		this(jpa, auditLogsProvider != null ? auditLogsProvider.getIfAvailable(AuditLogRepository::noop)
+			: AuditLogRepository.noop());
+	}
+
+	JpaAuditoriumRepository(AuditoriumEntityRepository jpa, AuditLogRepository auditLogs) {
 		this.jpa = jpa;
+		this.auditLogs = auditLogs != null ? auditLogs : AuditLogRepository.noop();
 	}
 
 	@Override
@@ -47,8 +63,18 @@ class JpaAuditoriumRepository implements AuditoriumRepository {
 	@Override
 	@Transactional
 	public Auditorium save(Auditorium auditorium) {
+		return save(auditorium, null);
+	}
+
+	@Override
+	@Transactional
+	public Auditorium save(Auditorium auditorium, AuditLog auditLog) {
 		try {
-			return jpa.saveAndFlush(AuditoriumEntity.from(auditorium)).toAuditorium();
+			Auditorium saved = jpa.saveAndFlush(AuditoriumEntity.from(auditorium)).toAuditorium();
+			if (auditLog != null) {
+				auditLogs.append(auditLog);
+			}
+			return saved;
 		} catch (DataIntegrityViolationException e) {
 			if (hasConstraint(e, "uq_auditorium_cinema_name")) {
 				throw new AuditoriumNameTakenException();
@@ -60,9 +86,18 @@ class JpaAuditoriumRepository implements AuditoriumRepository {
 	@Override
 	@Transactional
 	public void deleteById(UUID id) {
+		deleteById(id, null);
+	}
+
+	@Override
+	@Transactional
+	public void deleteById(UUID id, AuditLog auditLog) {
 		try {
 			jpa.deleteById(id);
 			jpa.flush();
+			if (auditLog != null) {
+				auditLogs.append(auditLog);
+			}
 		} catch (DataIntegrityViolationException e) {
 			if (hasConstraint(e, "fk_showtime_auditorium")) {
 				throw new ConflictException("Auditorium has Showtimes");

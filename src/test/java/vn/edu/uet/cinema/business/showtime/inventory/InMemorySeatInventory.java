@@ -13,6 +13,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import vn.edu.uet.cinema.business.PageQuery;
 import vn.edu.uet.cinema.business.PageSlice;
+import vn.edu.uet.cinema.business.audit.AuditAction;
+import vn.edu.uet.cinema.business.audit.AuditDetails;
+import vn.edu.uet.cinema.business.audit.AuditLog;
+import vn.edu.uet.cinema.business.audit.AuditLogRepository;
+import vn.edu.uet.cinema.business.audit.AuditTargetType;
 import vn.edu.uet.cinema.business.booking.BookingRepository;
 import vn.edu.uet.cinema.business.booking.PaymentTransaction;
 import vn.edu.uet.cinema.business.booking.PaymentTransactionRepository;
@@ -31,11 +36,17 @@ import vn.edu.uet.cinema.business.showtime.ShowtimeStatus;
 public class InMemorySeatInventory implements SeatInventory, BookingRepository, PaymentTransactionRepository {
 
 	private final InMemoryShowtimes showtimes;
+	private final AuditLogRepository auditLogs;
 	private final Map<UUID, Booking> rows = new LinkedHashMap<>();
 	private final List<PaymentTransaction> transactions = new ArrayList<>();
 
 	public InMemorySeatInventory(InMemoryShowtimes showtimes) {
+		this(showtimes, AuditLogRepository.noop());
+	}
+
+	public InMemorySeatInventory(InMemoryShowtimes showtimes, AuditLogRepository auditLogs) {
 		this.showtimes = showtimes;
+		this.auditLogs = auditLogs != null ? auditLogs : AuditLogRepository.noop();
 	}
 
 	/** Test helper: stores a Booking as it is, as if written earlier. */
@@ -211,6 +222,11 @@ public class InMemorySeatInventory implements SeatInventory, BookingRepository, 
 
 	@Override
 	public synchronized CancelOutcome cancel(UUID showtimeId, Cancellation cancellation, Instant now) {
+		return cancel(null, showtimeId, cancellation, now);
+	}
+
+	@Override
+	public synchronized CancelOutcome cancel(UUID actorId, UUID showtimeId, Cancellation cancellation, Instant now) {
 		Showtime s = showtimes.findById(showtimeId).orElse(null);
 		if (s == null) {
 			return new CancelOutcome.NotFound();
@@ -220,9 +236,18 @@ public class InMemorySeatInventory implements SeatInventory, BookingRepository, 
 		}
 		showtimes.replace(new Showtime(s.id(), s.movieId(), s.auditoriumId(), s.startsAt(), s.endsAt(), s.basePrice(),
 			ShowtimeStatus.CANCELLED, cancellation));
-		rows.values().removeIf(b -> b.showtimeId().equals(showtimeId) && b.status() == BookingStatus.PENDING);
+		int[] deletedPending = {0};
+		rows.values().removeIf(b -> {
+			if (b.showtimeId().equals(showtimeId) && b.status() == BookingStatus.PENDING) {
+				deletedPending[0]++;
+				return true;
+			}
+			return false;
+		});
+		int[] refundedConfirmed = {0};
 		rows.replaceAll((bookingId, b) -> {
 			if (b.showtimeId().equals(showtimeId) && b.status() == BookingStatus.CONFIRMED) {
+				refundedConfirmed[0]++;
 				boolean alreadyRefunded = transactions.stream()
 					.anyMatch(tx -> tx.bookingId().equals(b.id()) && tx.type() == PaymentTransactionType.REFUND);
 				if (!alreadyRefunded) {
@@ -235,20 +260,49 @@ public class InMemorySeatInventory implements SeatInventory, BookingRepository, 
 			}
 			return b;
 		});
+		if (actorId != null) {
+			String details = AuditDetails.builder()
+				.put("reason", cancellation.reason().name())
+				.put("note", cancellation.note())
+				.put("deletedPendingBookings", deletedPending[0])
+				.put("refundedConfirmedBookings", refundedConfirmed[0])
+				.toJson();
+			auditLogs.append(AuditLog.of(actorId, AuditAction.SHOWTIME_CANCELLED, AuditTargetType.SHOWTIME,
+				showtimeId, details, now));
+		}
 		return new CancelOutcome.Cancelled();
 	}
 
 	@Override
 	public synchronized DeleteOutcome delete(UUID showtimeId, Instant now) {
+		return delete(null, showtimeId, now);
+	}
+
+	@Override
+	public synchronized DeleteOutcome delete(UUID actorId, UUID showtimeId, Instant now) {
 		if (showtimes.findById(showtimeId).isEmpty()) {
 			return new DeleteOutcome.NotFound();
 		}
-		rows.values().removeIf(b -> b.showtimeId().equals(showtimeId) && b.statusAt(now) == BookingStatus.EXPIRED);
+		int[] purgedLapsedHolds = {0};
+		rows.values().removeIf(b -> {
+			if (b.showtimeId().equals(showtimeId) && b.statusAt(now) == BookingStatus.EXPIRED) {
+				purgedLapsedHolds[0]++;
+				return true;
+			}
+			return false;
+		});
 		// fk_booking_showtime is ON DELETE RESTRICT.
 		if (rows.values().stream().anyMatch(b -> b.showtimeId().equals(showtimeId))) {
 			return new DeleteOutcome.HasBookings();
 		}
 		showtimes.remove(showtimeId);
+		if (actorId != null) {
+			String details = AuditDetails.builder()
+				.put("purgedLapsedHolds", purgedLapsedHolds[0])
+				.toJson();
+			auditLogs.append(AuditLog.of(actorId, AuditAction.SHOWTIME_DELETED, AuditTargetType.SHOWTIME,
+				showtimeId, details, now));
+		}
 		return new DeleteOutcome.Deleted();
 	}
 }

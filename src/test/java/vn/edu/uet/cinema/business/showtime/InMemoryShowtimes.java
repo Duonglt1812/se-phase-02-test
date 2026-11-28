@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import vn.edu.uet.cinema.business.audit.AuditLog;
+import vn.edu.uet.cinema.business.audit.AuditLogRepository;
 import vn.edu.uet.cinema.business.auditorium.Auditorium;
 import vn.edu.uet.cinema.business.auditorium.InMemoryAuditoriums;
 
@@ -18,15 +20,30 @@ public class InMemoryShowtimes implements ShowtimeRepository {
 
 	private final Map<UUID, Showtime> rows = new LinkedHashMap<>();
 	private final InMemoryAuditoriums auditoriums;
+	private final AuditLogRepository auditLogs;
 
 	public InMemoryShowtimes(InMemoryAuditoriums auditoriums) {
+		this(auditoriums, AuditLogRepository.noop());
+	}
+
+	public InMemoryShowtimes(InMemoryAuditoriums auditoriums, AuditLogRepository auditLogs) {
 		this.auditoriums = auditoriums;
+		this.auditLogs = auditLogs != null ? auditLogs : AuditLogRepository.noop();
 	}
 
 	@Override
 	public Showtime save(Showtime showtime) {
 		rows.put(showtime.id(), showtime);
 		return showtime;
+	}
+
+	@Override
+	public Showtime save(Showtime showtime, AuditLog auditLog) {
+		Showtime saved = save(showtime);
+		if (auditLog != null) {
+			auditLogs.append(auditLog);
+		}
+		return saved;
 	}
 
 	@Override
