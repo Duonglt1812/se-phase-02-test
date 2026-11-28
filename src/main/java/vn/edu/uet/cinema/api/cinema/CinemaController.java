@@ -10,12 +10,15 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,8 +51,8 @@ class CinemaController {
 		+ "an authenticated ADMIN role is required.")
 	@ResponseStatus(HttpStatus.CREATED)
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	CinemaResponse create(@Valid @RequestBody CinemaRequest request) {
-		return CinemaResponse.from(cinemas.create(request.name(), request.address()));
+	CinemaResponse create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CinemaRequest request) {
+		return CinemaResponse.from(cinemas.create(actorId(jwt), request.name(), request.address(), Instant.now()));
 	}
 
 	@GetMapping("/api/cinemas")
@@ -80,10 +83,10 @@ class CinemaController {
 	@Operation(summary = "Update a cinema", description = "Replaces a cinema's name and address. The cinema must exist; "
 		+ "a missing cinema returns 404. Requires ADMIN.")
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	CinemaResponse update(
+	CinemaResponse update(@AuthenticationPrincipal Jwt jwt,
 		@Parameter(description = "Cinema UUID.", example = "550e8400-e29b-41d4-a716-446655440001") @PathVariable UUID id,
 		@Valid @RequestBody CinemaRequest request) {
-		return CinemaResponse.from(cinemas.update(id, request.name(), request.address()));
+		return CinemaResponse.from(cinemas.update(actorId(jwt), id, request.name(), request.address(), Instant.now()));
 	}
 
 	@DeleteMapping("/api/cinemas/{id}")
@@ -91,9 +94,14 @@ class CinemaController {
 		+ "ADMIN role is required; a missing cinema returns 404 and existing auditoriums cause 409.")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	void delete(@Parameter(description = "Cinema UUID.", example = "550e8400-e29b-41d4-a716-446655440001")
+	void delete(@AuthenticationPrincipal Jwt jwt,
+		@Parameter(description = "Cinema UUID.", example = "550e8400-e29b-41d4-a716-446655440001")
 		@PathVariable UUID id) {
-		cinemas.delete(id);
+		cinemas.delete(actorId(jwt), id, Instant.now());
+	}
+
+	private static UUID actorId(Jwt jwt) {
+		return jwt != null ? UUID.fromString(jwt.getSubject()) : null;
 	}
 
 	@Schema(name = "CinemaRequest")

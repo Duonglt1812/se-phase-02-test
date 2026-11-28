@@ -14,12 +14,15 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,11 +53,11 @@ class AuditoriumController {
 		+ "refer to distinct valid row letters. Missing cinema returns 404 and a duplicate name returns 409. Requires ADMIN.")
 	@ResponseStatus(HttpStatus.CREATED)
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	AuditoriumResponse create(
+	AuditoriumResponse create(@AuthenticationPrincipal Jwt jwt,
 		@Parameter(description = "Owning cinema UUID.", example = "550e8400-e29b-41d4-a716-446655440001") @PathVariable UUID id,
 		@Valid @RequestBody AuditoriumRequest request) {
-		return AuditoriumResponse.detail(auditoriums.create(id, request.name(), request.rows(), request.seatsPerRow(),
-			request.vipRows(), request.coupleRows()));
+		return AuditoriumResponse.detail(auditoriums.create(actorId(jwt), id, request.name(), request.rows(),
+			request.seatsPerRow(), request.vipRows(), request.coupleRows(), Instant.now()));
 	}
 
 	@GetMapping("/api/cinemas/{id}/auditoriums")
@@ -79,9 +82,13 @@ class AuditoriumController {
 		+ "Requires ADMIN; an unknown auditorium returns 404 and dependent showtimes cause 409.")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	void delete(
+	void delete(@AuthenticationPrincipal Jwt jwt,
 		@Parameter(description = "Auditorium UUID.", example = "550e8400-e29b-41d4-a716-446655440003") @PathVariable UUID id) {
-		auditoriums.delete(id);
+		auditoriums.delete(actorId(jwt), id, Instant.now());
+	}
+
+	private static UUID actorId(Jwt jwt) {
+		return jwt != null ? UUID.fromString(jwt.getSubject()) : null;
 	}
 
 	@Schema(name = "AuditoriumRequest")

@@ -12,6 +12,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import vn.edu.uet.cinema.business.ConflictException;
 import vn.edu.uet.cinema.business.NotFoundException;
+import vn.edu.uet.cinema.business.audit.AuditAction;
+import vn.edu.uet.cinema.business.audit.AuditTargetType;
+import vn.edu.uet.cinema.business.audit.InMemoryAuditLogs;
 import vn.edu.uet.cinema.business.auditorium.Auditorium;
 import vn.edu.uet.cinema.business.auditorium.AuditoriumService;
 import vn.edu.uet.cinema.business.auditorium.InMemoryAuditoriums;
@@ -35,9 +38,10 @@ class ShowtimeServiceTest {
 
 	private static final Instant STARTS_AT = Instant.parse("2026-10-01T14:00:00Z");
 
+	private final InMemoryAuditLogs auditLogs = new InMemoryAuditLogs();
 	private final InMemoryAuditoriums auditoriumRows = new InMemoryAuditoriums();
-	private final InMemoryShowtimes repository = new InMemoryShowtimes(auditoriumRows);
-	private final InMemorySeatInventory bookings = new InMemorySeatInventory(repository);
+	private final InMemoryShowtimes repository = new InMemoryShowtimes(auditoriumRows, auditLogs);
+	private final InMemorySeatInventory bookings = new InMemorySeatInventory(repository, auditLogs);
 	private final InMemoryMovies movieRows = new InMemoryMovies();
 	private final MovieService movies = new MovieService(movieRows, repository);
 	private final AuditoriumService auditoriums = new AuditoriumService(
@@ -264,6 +268,44 @@ class ShowtimeServiceTest {
 		assertThatThrownBy(() -> service.seatMap(UUID.randomUUID(), now)).isInstanceOf(NotFoundException.class);
 		assertThatThrownBy(() -> service.seatMap(cancelled.id(), now)).isInstanceOf(ConflictException.class)
 			.hasMessage("Showtime is Cancelled");
+	}
+
+	@Test
+	void auditedShowtimeCreateCancelAndDeleteRecordStructuredEntriesOnlyOnSuccess() {
+		UUID adminId = UUID.randomUUID();
+		UUID movieId = movie(120);
+		Instant now = Instant.parse("2026-10-01T13:00:00Z");
+
+		Showtime created = service.create(adminId, movieId, auditoriumId, STARTS_AT, 100_000L, now);
+		assertThatThrownBy(() -> service.create(adminId, movieId, auditoriumId, STARTS_AT.plusSeconds(60), 100_000L, now))
+			.isInstanceOf(ConflictException.class);
+
+		booking(created, BookingStatus.PENDING, now.plusSeconds(600));
+		booking(created, BookingStatus.CONFIRMED, now.minusSeconds(60));
+		service.cancel(adminId, created.id(), CancellationReason.EQUIPMENT_FAILURE, "Bulb failed", now);
+		assertThatThrownBy(() -> service.cancel(adminId, created.id(), CancellationReason.POWER_OUTAGE, null, now))
+			.isInstanceOf(ConflictException.class);
+
+		Showtime deletable = service.create(adminId, movieId, auditoriumId, STARTS_AT.plusSeconds(20_000), 90_000L, now);
+		booking(deletable, BookingStatus.PENDING, now.minusSeconds(1));
+		service.delete(adminId, deletable.id(), now);
+		assertThatThrownBy(() -> service.delete(adminId, deletable.id(), now)).isInstanceOf(NotFoundException.class);
+
+		assertThat(auditLogs.all()).extracting(e -> e.action())
+			.containsExactly(
+				AuditAction.SHOWTIME_CREATED,
+				AuditAction.SHOWTIME_CANCELLED,
+				AuditAction.SHOWTIME_CREATED,
+				AuditAction.SHOWTIME_DELETED);
+		assertThat(auditLogs.all()).allSatisfy(e -> {
+			assertThat(e.actorId()).isEqualTo(adminId);
+			assertThat(e.targetType()).isEqualTo(AuditTargetType.SHOWTIME);
+		});
+		assertThat(auditLogs.all().get(1).details())
+			.contains("\"reason\":\"EQUIPMENT_FAILURE\"")
+			.contains("\"deletedPendingBookings\":1")
+			.contains("\"refundedConfirmedBookings\":1");
+		assertThat(auditLogs.all().get(3).details()).contains("\"purgedLapsedHolds\":1");
 	}
 
 	private final Seat standard = new Seat(UUID.randomUUID(), "A", 1, SeatType.STANDARD);

@@ -11,12 +11,15 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.uet.cinema.business.ConflictException;
+import vn.edu.uet.cinema.business.audit.AuditLog;
+import vn.edu.uet.cinema.business.audit.AuditLogRepository;
 import vn.edu.uet.cinema.business.showtime.Showtime;
 import vn.edu.uet.cinema.business.showtime.ShowtimeRepository;
 import vn.edu.uet.cinema.business.showtime.ShowtimeStatus;
@@ -36,22 +39,44 @@ class JpaShowtimeRepository implements ShowtimeRepository {
 
 	private final ShowtimeEntityRepository jpa;
 	private final JdbcClient jdbc;
+	private final AuditLogRepository auditLogs;
 
 	JpaShowtimeRepository(ShowtimeEntityRepository jpa) {
-		this(jpa, null);
+		this(jpa, null, AuditLogRepository.noop());
+	}
+
+	JpaShowtimeRepository(ShowtimeEntityRepository jpa, JdbcClient jdbc) {
+		this(jpa, jdbc, AuditLogRepository.noop());
 	}
 
 	@Autowired
-	JpaShowtimeRepository(ShowtimeEntityRepository jpa, JdbcClient jdbc) {
+	JpaShowtimeRepository(ShowtimeEntityRepository jpa, JdbcClient jdbc,
+		ObjectProvider<AuditLogRepository> auditLogsProvider) {
+		this(jpa, jdbc, auditLogsProvider != null ? auditLogsProvider.getIfAvailable(AuditLogRepository::noop)
+			: AuditLogRepository.noop());
+	}
+
+	JpaShowtimeRepository(ShowtimeEntityRepository jpa, JdbcClient jdbc, AuditLogRepository auditLogs) {
 		this.jpa = jpa;
 		this.jdbc = jdbc;
+		this.auditLogs = auditLogs != null ? auditLogs : AuditLogRepository.noop();
 	}
 
 	@Override
 	@Transactional
 	public Showtime save(Showtime showtime) {
+		return save(showtime, null);
+	}
+
+	@Override
+	@Transactional
+	public Showtime save(Showtime showtime, AuditLog auditLog) {
 		try {
-			return jpa.saveAndFlush(ShowtimeEntity.from(showtime)).toShowtime();
+			Showtime saved = jpa.saveAndFlush(ShowtimeEntity.from(showtime)).toShowtime();
+			if (auditLog != null) {
+				auditLogs.append(auditLog);
+			}
+			return saved;
 		} catch (DataIntegrityViolationException e) {
 			if (hasConstraint(e, "fk_showtime_movie")) {
 				throw new ConflictException("Movie no longer exists");

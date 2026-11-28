@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,9 +55,10 @@ class MovieController {
 		+ "is descriptive only. Requires ADMIN.")
 	@ResponseStatus(HttpStatus.CREATED)
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	MovieResponse create(@Valid @RequestBody MovieRequest request) {
-		return MovieResponse.from(movies.create(request.title(), request.description(), request.durationMinutes(),
-			request.genre(), request.ageRating(), request.releaseDate(), request.posterUrl()));
+	MovieResponse create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody MovieRequest request) {
+		return MovieResponse.from(movies.create(actorId(jwt), request.title(), request.description(),
+			request.durationMinutes(), request.genre(), request.ageRating(), request.releaseDate(),
+			request.posterUrl(), Instant.now()));
 	}
 
 	@GetMapping("/api/movies")
@@ -84,11 +88,12 @@ class MovieController {
 	@Operation(summary = "Update a movie", description = "Replaces the movie's catalogue fields. A missing movie returns 404. "
 		+ "Requires ADMIN.")
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	MovieResponse update(
+	MovieResponse update(@AuthenticationPrincipal Jwt jwt,
 		@Parameter(description = "Movie UUID.", example = "550e8400-e29b-41d4-a716-446655440002") @PathVariable UUID id,
 		@Valid @RequestBody MovieRequest request) {
-		return MovieResponse.from(movies.update(id, request.title(), request.description(), request.durationMinutes(),
-			request.genre(), request.ageRating(), request.releaseDate(), request.posterUrl()));
+		return MovieResponse.from(movies.update(actorId(jwt), id, request.title(), request.description(),
+			request.durationMinutes(), request.genre(), request.ageRating(), request.releaseDate(),
+			request.posterUrl(), Instant.now()));
 	}
 
 	@DeleteMapping("/api/movies/{id}")
@@ -96,9 +101,14 @@ class MovieController {
 		+ "an unknown movie returns 404 and dependent showtimes cause 409.")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	void delete(@Parameter(description = "Movie UUID.", example = "550e8400-e29b-41d4-a716-446655440002")
+	void delete(@AuthenticationPrincipal Jwt jwt,
+		@Parameter(description = "Movie UUID.", example = "550e8400-e29b-41d4-a716-446655440002")
 		@PathVariable UUID id) {
-		movies.delete(id);
+		movies.delete(actorId(jwt), id, Instant.now());
+	}
+
+	private static UUID actorId(Jwt jwt) {
+		return jwt != null ? UUID.fromString(jwt.getSubject()) : null;
 	}
 
 	@Schema(name = "MovieRequest")

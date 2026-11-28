@@ -9,6 +9,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import vn.edu.uet.cinema.business.ConflictException;
 import vn.edu.uet.cinema.business.NotFoundException;
+import vn.edu.uet.cinema.business.audit.AuditAction;
+import vn.edu.uet.cinema.business.audit.AuditDetails;
+import vn.edu.uet.cinema.business.audit.AuditLog;
+import vn.edu.uet.cinema.business.audit.AuditTargetType;
 import vn.edu.uet.cinema.business.auditorium.AuditoriumService;
 import vn.edu.uet.cinema.business.auditorium.Seat;
 import vn.edu.uet.cinema.business.movie.MovieService;
@@ -29,6 +33,7 @@ public class ShowtimeService {
 	private final SeatInventory inventory;
 	private final Map<UUID, List<Seat>> layouts = new ConcurrentHashMap<>();
 	private final Map<UUID, Map<UUID, Seat>> seatsByIdCache = new ConcurrentHashMap<>();
+	private final Map<UUID, Showtime> scheduledCache = new ConcurrentHashMap<>();
 
 	public ShowtimeService(MovieService movies, AuditoriumService auditoriums, ShowtimeRepository showtimes,
 		SeatInventory inventory) {
@@ -39,6 +44,11 @@ public class ShowtimeService {
 	}
 
 	public Showtime create(UUID movieId, UUID auditoriumId, Instant startsAt, long basePrice) {
+		return create(null, movieId, auditoriumId, startsAt, basePrice, Instant.now());
+	}
+
+	public Showtime create(UUID actorId, UUID movieId, UUID auditoriumId, Instant startsAt, long basePrice,
+		Instant now) {
 		if (basePrice <= 0) {
 			throw new InvalidShowtimeException("Base price must be positive");
 		}
@@ -51,17 +61,44 @@ public class ShowtimeService {
 		if (showtimes.existsOverlapping(auditoriumId, startsAt, endsAt)) {
 			throw new ConflictException("Auditorium has an overlapping Showtime");
 		}
-		return showtimes.save(new Showtime(UUID.randomUUID(), movieId, auditoriumId, startsAt, endsAt, basePrice));
+		Showtime showtime = new Showtime(UUID.randomUUID(), movieId, auditoriumId, startsAt, endsAt, basePrice);
+		if (actorId == null) {
+			return showtimes.save(showtime);
+		}
+		Instant timestamp = now != null ? now : Instant.now();
+		String details = AuditDetails.builder()
+			.put("movieId", movieId)
+			.put("auditoriumId", auditoriumId)
+			.put("startsAt", startsAt)
+			.put("endsAt", endsAt)
+			.put("basePrice", basePrice)
+			.toJson();
+		AuditLog auditLog = AuditLog.of(actorId, AuditAction.SHOWTIME_CREATED, AuditTargetType.SHOWTIME,
+			showtime.id(), details, timestamp);
+		Showtime saved = showtimes.save(showtime, auditLog);
+		if (saved.status() == ShowtimeStatus.SCHEDULED) {
+			scheduledCache.put(saved.id(), saved);
+		}
+		return saved;
 	}
 
 	public Showtime get(UUID id) {
-		return showtimes.findById(id).orElseThrow(() -> new NotFoundException("Showtime not found"));
+		Showtime cached = scheduledCache.get(id);
+		if (cached != null) {
+			return cached;
+		}
+		Showtime showtime = showtimes.findById(id).orElseThrow(() -> new NotFoundException("Showtime not found"));
+		if (showtime.status() == ShowtimeStatus.SCHEDULED) {
+			scheduledCache.putIfAbsent(id, showtime);
+		}
+		return showtime;
 	}
 
 	/** A Showtime whose Seats can still be chosen: a Cancelled one is a conflict. */
 	public Showtime getScheduled(UUID id) {
 		Showtime showtime = get(id);
 		if (showtime.status() == ShowtimeStatus.CANCELLED) {
+			scheduledCache.remove(id);
 			throw new ConflictException("Showtime is Cancelled");
 		}
 		return showtime;
@@ -119,6 +156,11 @@ public class ShowtimeService {
 
 	/** Its Pending Bookings are deleted and its Confirmed ones become Refunded. A blank note counts as no note. */
 	public Showtime cancel(UUID id, CancellationReason reason, String note, Instant now) {
+		return cancel(null, id, reason, note, now);
+	}
+
+	/** Cancels the Showtime and records an atomic audit entry when {@code actorId} is non-null (S4). */
+	public Showtime cancel(UUID actorId, UUID id, CancellationReason reason, String note, Instant now) {
 		String given = note == null || note.isBlank() ? null : note;
 		if (reason == CancellationReason.OTHER && given == null) {
 			throw new InvalidShowtimeException("A Cancellation Reason of Other needs a note");
@@ -127,7 +169,11 @@ public class ShowtimeService {
 			throw new InvalidShowtimeException("A cancellation note has at most " + MAX_NOTE_LENGTH + " characters");
 		}
 		Cancellation cancellation = new Cancellation(reason, given);
-		return switch (inventory.cancel(id, cancellation, now)) {
+		CancelOutcome outcome = actorId == null
+			? inventory.cancel(id, cancellation, now)
+			: inventory.cancel(actorId, id, cancellation, now);
+		scheduledCache.remove(id);
+		return switch (outcome) {
 			case CancelOutcome.Cancelled cancelled -> {
 				Showtime showtime = get(id);
 				yield new Showtime(showtime.id(), showtime.movieId(),
@@ -142,7 +188,15 @@ public class ShowtimeService {
 	}
 
 	public void delete(UUID id, Instant now) {
-		switch (inventory.delete(id, now)) {
+		delete(null, id, now);
+	}
+
+	public void delete(UUID actorId, UUID id, Instant now) {
+		scheduledCache.remove(id);
+		DeleteOutcome outcome = actorId == null
+			? inventory.delete(id, now)
+			: inventory.delete(actorId, id, now);
+		switch (outcome) {
 			case DeleteOutcome.Deleted deleted -> {
 			}
 			case DeleteOutcome.HasBookings hasBookings -> throw new ConflictException("Showtime has Bookings");

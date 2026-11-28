@@ -115,7 +115,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			return problem(e, headers, status, request, UNREADABLE_DETAIL, List.of());
 		}
 		return problem(e, headers, status, request, "Request body contains an invalid value.",
-			List.of(new ValidationError(fieldName(invalid), invalidFormatMessage(invalid.getTargetType()))));
+			List.of(new ValidationError(fieldName(invalid), invalidFormatMessage(invalid))));
 	}
 
 	@Override
@@ -208,6 +208,13 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			}
 		}
 		return field.isEmpty() ? "body" : field.toString();
+	}
+
+	private static String invalidFormatMessage(InvalidFormatException invalid) {
+		if (invalid.getTargetType() == String.class && !(invalid.getValue() instanceof String)) {
+			return "Must be a string.";
+		}
+		return invalidFormatMessage(invalid.getTargetType());
 	}
 
 	private static String invalidFormatMessage(Class<?> targetType) {
