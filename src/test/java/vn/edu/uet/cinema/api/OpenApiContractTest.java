@@ -32,6 +32,7 @@ import vn.edu.uet.cinema.business.PageQuery;
 import vn.edu.uet.cinema.business.PageSlice;
 import vn.edu.uet.cinema.business.account.AccountService;
 import vn.edu.uet.cinema.business.account.RefreshTokenService;
+import vn.edu.uet.cinema.business.audit.AuditLogService;
 import vn.edu.uet.cinema.business.auditorium.AuditoriumService;
 import vn.edu.uet.cinema.business.booking.BookingService;
 import vn.edu.uet.cinema.business.cinema.CinemaService;
@@ -50,6 +51,8 @@ class OpenApiContractTest {
 	private static final Map<String, String> SUCCESS_RESPONSES = Map.ofEntries(
 		Map.entry("POST /api/auth/register", "201"),
 		Map.entry("POST /api/auth/logout", "204"),
+		Map.entry("POST /api/me/password", "204"),
+		Map.entry("POST /api/admin/accounts", "201"),
 		Map.entry("POST /api/cinemas", "201"),
 		Map.entry("DELETE /api/cinemas/{id}", "204"),
 		Map.entry("POST /api/cinemas/{id}/auditoriums", "201"),
@@ -66,6 +69,10 @@ class OpenApiContractTest {
 		Map.entry("POST /api/auth/refresh", Set.of("400", "401")),
 		Map.entry("POST /api/auth/logout", Set.of("400", "401")),
 		Map.entry("GET /api/me", Set.of("401", "404")),
+		Map.entry("POST /api/me/password", Set.of("400", "401", "404")),
+		Map.entry("POST /api/admin/accounts", Set.of("400", "401", "403", "409")),
+		Map.entry("GET /api/admin/accounts", Set.of("400", "401", "403")),
+		Map.entry("GET /api/admin/audit-logs", Set.of("400", "401", "403")),
 		Map.entry("POST /api/cinemas", Set.of("400", "401", "403")),
 		Map.entry("GET /api/cinemas", Set.of("400", "401")),
 		Map.entry("GET /api/cinemas/{id}", Set.of("400", "401", "404")),
@@ -99,6 +106,8 @@ class OpenApiContractTest {
 	AccountService accounts;
 	@MockitoBean
 	RefreshTokenService refreshTokens;
+	@MockitoBean
+	AuditLogService auditLogs;
 	@MockitoBean
 	CinemaService cinemas;
 	@MockitoBean
@@ -153,8 +162,15 @@ class OpenApiContractTest {
 
 	@Test
 	void generatedOpenApiCoversAllOperationsErrorsSecurityAndBounds() throws Exception {
-		String json = mvc.perform(get("/v3/api-docs")).andExpect(status().isOk())
-			.andReturn().getResponse().getContentAsString();
+		String json = mvc.perform(get("http://localhost:8080/v3/api-docs")).andExpect(status().isOk())
+			.andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+		if (Boolean.getBoolean("updateOpenApiSpec")) {
+			tools.jackson.databind.ObjectMapper mapper = new tools.jackson.databind.ObjectMapper();
+			Object tree = mapper.readValue(json, Object.class);
+			String formatted = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tree) + "\n";
+			java.nio.file.Files.writeString(java.nio.file.Path.of("docs/openapi.json"), formatted,
+				java.nio.charset.StandardCharsets.UTF_8);
+		}
 		Map<String, Object> api = JsonPath.read(json, "$");
 		Map<String, Object> paths = map(api.get("paths"));
 		Map<String, Object> components = map(api.get("components"));
@@ -163,9 +179,9 @@ class OpenApiContractTest {
 		Map<String, Object> validationProblem = map(schemas.get("ValidationProblem"));
 		Map<String, Object> properties = map(validationProblem.get("properties"));
 
-		assertThat(ERROR_MATRIX).hasSize(30);
+		assertThat(ERROR_MATRIX).hasSize(34);
 		assertThat(paths.values().stream().map(OpenApiContractTest::map).mapToInt(path -> (int) path.keySet().stream()
-			.filter(Set.of("get", "post", "put", "delete")::contains).count()).sum()).isEqualTo(30);
+			.filter(Set.of("get", "post", "put", "delete")::contains).count()).sum()).isEqualTo(34);
 		assertThat(api.get("security")).isNull();
 		assertThat(properties).containsKeys("type", "title", "status", "detail", "instance", "errors", "seatIds");
 		assertThat(new HashSet<>((List<?>) validationProblem.get("required")))
@@ -216,18 +232,22 @@ class OpenApiContractTest {
 					}
 				}
 			}
-			boolean shouldRequireBearer = path.equals("/api/me") || path.equals("/api/auth/logout")
+			boolean shouldRequireBearer = path.equals("/api/me") || path.equals("/api/me/password")
+				|| path.equals("/api/auth/logout") || path.startsWith("/api/admin/")
 				|| path.startsWith("/api/bookings") || !method.equals("get") && !path.startsWith("/api/auth/");
 			assertThat(operation.containsKey("security")).as(expected.getKey()).isEqualTo(shouldRequireBearer);
 			if (shouldRequireBearer) {
 				secured++;
 			}
 		}
-		assertThat(secured).isEqualTo(18);
-		assertThat(tags).containsExactlyInAnyOrder("Accounts", "Cinemas", "Auditoriums", "Movies", "Showtimes", "Bookings");
+		assertThat(secured).isEqualTo(22);
+		assertThat(tags).containsExactlyInAnyOrder("Accounts", "Audit Logs", "Cinemas", "Auditoriums", "Movies",
+			"Showtimes", "Bookings");
 		assertSecurityProblemExamples(responses);
 
 		assertRequestExamples(schemas, "RegisterRequest", "email", "password", "fullName");
+		assertRequestExamples(schemas, "CreateAdminRequest", "email", "password", "fullName");
+		assertRequestExamples(schemas, "ChangePasswordRequest", "currentPassword", "newPassword");
 		assertRequestExamples(schemas, "LoginRequest", "email", "password");
 		assertRequestExamples(schemas, "RefreshRequest", "refreshToken");
 		assertRequestExamples(schemas, "LogoutRequest", "refreshToken");
@@ -247,11 +267,18 @@ class OpenApiContractTest {
 			});
 		assertNoStorageCeilings(schemas, "RegisterRequest", "email", "fullName");
 		assertNoStorageCeilings(schemas, "RegisterRequest", "password");
+		assertNoStorageCeilings(schemas, "CreateAdminRequest", "email", "password", "fullName");
+		assertNoStorageCeilings(schemas, "ChangePasswordRequest", "newPassword");
 		assertNoStorageCeilings(schemas, "CinemaRequest", "name", "address");
 		assertNoStorageCeilings(schemas, "AuditoriumRequest", "name");
 		assertNoStorageCeilings(schemas, "MovieRequest", "title", "genre", "description", "posterUrl");
 		assertProperty(schemas, "RegisterRequest", "email", "minLength", 1);
 		assertProperty(schemas, "RegisterRequest", "fullName", "minLength", 1);
+		assertProperty(schemas, "CreateAdminRequest", "email", "minLength", 1);
+		assertProperty(schemas, "CreateAdminRequest", "fullName", "minLength", 1);
+		assertProperty(schemas, "CreateAdminRequest", "password", "minLength", 8);
+		assertProperty(schemas, "ChangePasswordRequest", "currentPassword", "minLength", 1);
+		assertProperty(schemas, "ChangePasswordRequest", "newPassword", "minLength", 8);
 		assertProperty(schemas, "RefreshRequest", "refreshToken", "minLength", 1);
 		assertProperty(schemas, "CinemaRequest", "name", "minLength", 1);
 		assertProperty(schemas, "AuditoriumRequest", "name", "minLength", 1);
@@ -408,6 +435,7 @@ class OpenApiContractTest {
 		"org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration"})
 	@ComponentScan(basePackages = {
 		"vn.edu.uet.cinema.api.account",
+		"vn.edu.uet.cinema.api.audit",
 		"vn.edu.uet.cinema.api.auditorium",
 		"vn.edu.uet.cinema.api.booking",
 		"vn.edu.uet.cinema.api.cinema",

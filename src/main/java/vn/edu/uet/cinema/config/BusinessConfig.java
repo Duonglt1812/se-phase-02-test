@@ -16,6 +16,8 @@ import vn.edu.uet.cinema.business.account.AccountService;
 import vn.edu.uet.cinema.business.account.PasswordHasher;
 import vn.edu.uet.cinema.business.account.RefreshTokenRepository;
 import vn.edu.uet.cinema.business.account.RefreshTokenService;
+import vn.edu.uet.cinema.business.audit.AuditLogRepository;
+import vn.edu.uet.cinema.business.audit.AuditLogService;
 import vn.edu.uet.cinema.business.auditorium.AuditoriumRepository;
 import vn.edu.uet.cinema.business.auditorium.AuditoriumService;
 import vn.edu.uet.cinema.business.booking.AntiHoardingGuard;
@@ -50,6 +52,11 @@ class BusinessConfig {
 	@Bean
 	AccountService accountService(AccountRepository accounts, PasswordHasher passwordHasher) {
 		return new AccountService(accounts, passwordHasher);
+	}
+
+	@Bean
+	AuditLogService auditLogService(AuditLogRepository auditLogs) {
+		return new AuditLogService(auditLogs);
 	}
 
 	@Bean
@@ -105,7 +112,7 @@ class BusinessConfig {
 				maxAbandonsInWindow, Duration.ofSeconds(repeatedAbandonPenaltySeconds), maxActiveHoldsPerIp));
 	}
 
-	/** Admins are never self-registered: the one Admin comes from ADMIN_EMAIL / ADMIN_PASSWORD. */
+	/** Seeds the initial bootstrap Admin from ADMIN_EMAIL / ADMIN_PASSWORD when absent (S4). */
 	@Bean
 	ApplicationRunner adminBootstrap(AccountService accounts, @Value("${app.admin.email}") String email,
 		@Value("${app.admin.password}") String password) {

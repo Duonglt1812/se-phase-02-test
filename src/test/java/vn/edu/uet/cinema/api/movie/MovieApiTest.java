@@ -136,6 +136,20 @@ class MovieApiTest {
 	}
 
 	@Test
+	void rejectsJsonScalarsForMovieStringFields() throws Exception {
+		String admin = token();
+		for (String value : List.of("123", "12.5")) {
+			mvc.perform(post("/api/movies").header("Authorization", "Bearer " + admin)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(movieJson("Replaced", "P").replace("\"Replaced\"", value)))
+				.andExpect(status().isBadRequest())
+				.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+				.andExpect(jsonPath("$.errors[0].field").value("title"))
+				.andExpect(jsonPath("$.errors[0].message").value("Must be a string."));
+		}
+	}
+
+	@Test
 	void movieWritesRequireAuthenticationAndAdminRole() throws Exception {
 		mvc.perform(post("/api/movies").contentType(MediaType.APPLICATION_JSON)
 				.content(movieJson("Unauthenticated movie", "P")))

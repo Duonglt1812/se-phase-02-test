@@ -16,6 +16,8 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,9 +54,9 @@ class ShowtimeController {
 		+ "a positive VND amount. Missing movie/auditorium returns 404 and an overlap returns 409. Requires ADMIN.")
 	@ResponseStatus(HttpStatus.CREATED)
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	ShowtimeResponse create(@Valid @RequestBody ShowtimeRequest request) {
-		return ShowtimeResponse.from(showtimes.create(request.movieId(), request.auditoriumId(),
-			request.startsAt().toInstant(), request.basePrice()));
+	ShowtimeResponse create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ShowtimeRequest request) {
+		return ShowtimeResponse.from(showtimes.create(actorId(jwt), request.movieId(), request.auditoriumId(),
+			request.startsAt().toInstant(), request.basePrice(), Instant.now()));
 	}
 
 	@GetMapping("/api/showtimes")
@@ -94,10 +96,10 @@ class ShowtimeController {
 		+ "requires a nonblank note of at most 200 characters. Confirmed bookings are refunded and Pending bookings removed. "
 		+ "An unknown showtime returns 404; a cancelled or ended showtime returns 409. Requires ADMIN.")
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	ShowtimeResponse cancel(
+	ShowtimeResponse cancel(@AuthenticationPrincipal Jwt jwt,
 		@Parameter(description = "Showtime UUID.", example = "550e8400-e29b-41d4-a716-446655440010") @PathVariable UUID id,
 		@Valid @RequestBody CancellationRequest request) {
-		return ShowtimeResponse.from(showtimes.cancel(id, request.reason(), request.note(), Instant.now()));
+		return ShowtimeResponse.from(showtimes.cancel(actorId(jwt), id, request.reason(), request.note(), Instant.now()));
 	}
 
 	@DeleteMapping("/api/showtimes/{id}")
@@ -106,9 +108,14 @@ class ShowtimeController {
 		+ "Requires ADMIN.")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-	void delete(@Parameter(description = "Showtime UUID.", example = "550e8400-e29b-41d4-a716-446655440010")
+	void delete(@AuthenticationPrincipal Jwt jwt,
+		@Parameter(description = "Showtime UUID.", example = "550e8400-e29b-41d4-a716-446655440010")
 		@PathVariable UUID id) {
-		showtimes.delete(id, Instant.now());
+		showtimes.delete(actorId(jwt), id, Instant.now());
+	}
+
+	private static UUID actorId(Jwt jwt) {
+		return jwt != null ? UUID.fromString(jwt.getSubject()) : null;
 	}
 
 	record ShowtimeRequest(@NotNull(message = "Movie is required")

@@ -25,6 +25,9 @@
     "name" : "Auditoriums",
     "description" : "Cinema auditoriums, seat layouts, and public seat reads."
   }, {
+    "name" : "Audit Logs",
+    "description" : "Append-only audit trail of administrative operations."
+  }, {
     "name" : "Showtimes",
     "description" : "Scheduled screenings, cancellation, and public seat availability."
   } ],
@@ -576,6 +579,44 @@
           },
           "403" : {
             "$ref" : "#/components/responses/Forbidden"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/me/password" : {
+      "post" : {
+        "tags" : [ "Accounts" ],
+        "summary" : "Change password",
+        "description" : "Changes the authenticated account's password at runtime without restarting the service. Requires the current password; newPassword must contain at least 8 characters. On success, revokes all refresh tokens for the account and blacklists the current access token. When called by an ADMIN, records an ADMIN_PASSWORD_CHANGED audit entry in the same transaction.",
+        "operationId" : "changePassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthorized"
@@ -1146,6 +1187,115 @@
         }
       }
     },
+    "/api/admin/accounts" : {
+      "get" : {
+        "tags" : [ "Accounts" ],
+        "summary" : "List admin accounts",
+        "description" : "Returns a page of database-managed ADMIN accounts ordered by email. Defaults to page=0 and size=20 (max 100); totals are returned in X-Total-Count, X-Page, X-Page-Size, and X-Total-Pages headers. Requires ADMIN.",
+        "operationId" : "listAdmins",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "description" : "Zero-based page index.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "0",
+            "maximum" : 100000,
+            "minimum" : 0
+          },
+          "example" : 0
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "description" : "Maximum number of items per page (1-100).",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "20",
+            "maximum" : 100,
+            "minimum" : 1
+          },
+          "example" : 20
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AccountResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      },
+      "post" : {
+        "tags" : [ "Accounts" ],
+        "summary" : "Create an admin account",
+        "description" : "Creates a new database-managed ADMIN account and records an ADMIN_CREATED audit log entry in the same transaction. Email addresses are normalized; an existing email returns 409. Requires ADMIN.",
+        "operationId" : "createAdmin",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateAdminRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
     "/api/showtimes/{id}" : {
       "get" : {
         "tags" : [ "Showtimes" ],
@@ -1490,6 +1640,109 @@
           "bearerAuth" : [ ]
         } ]
       }
+    },
+    "/api/admin/audit-logs" : {
+      "get" : {
+        "tags" : [ "Audit Logs" ],
+        "summary" : "List audit logs",
+        "description" : "Returns a page of append-only administrative audit entries ordered newest first. Optionally filters by action, targetType, targetId, and actorId. Totals are returned in X-Total-Count, X-Page, X-Page-Size, and X-Total-Pages headers. Requires ADMIN.",
+        "operationId" : "list_5",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "description" : "Zero-based page index.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "0",
+            "maximum" : 100000,
+            "minimum" : 0
+          },
+          "example" : 0
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "description" : "Maximum number of items per page (1-100).",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "20",
+            "maximum" : 100,
+            "minimum" : 1
+          },
+          "example" : 20
+        }, {
+          "name" : "action",
+          "in" : "query",
+          "description" : "Optional audit action filter.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "ADMIN_CREATED", "ADMIN_PASSWORD_CHANGED", "SHOWTIME_CREATED", "SHOWTIME_CANCELLED", "SHOWTIME_DELETED", "CINEMA_CREATED", "CINEMA_UPDATED", "CINEMA_DELETED", "AUDITORIUM_CREATED", "AUDITORIUM_DELETED", "MOVIE_CREATED", "MOVIE_UPDATED", "MOVIE_DELETED" ]
+          },
+          "example" : "SHOWTIME_CANCELLED"
+        }, {
+          "name" : "targetType",
+          "in" : "query",
+          "description" : "Optional target entity type filter.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "ACCOUNT", "SHOWTIME", "CINEMA", "AUDITORIUM", "MOVIE" ]
+          },
+          "example" : "SHOWTIME"
+        }, {
+          "name" : "targetId",
+          "in" : "query",
+          "description" : "Optional target resource UUID filter.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440010"
+        }, {
+          "name" : "actorId",
+          "in" : "query",
+          "description" : "Optional acting admin UUID filter.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "example" : "550e8400-e29b-41d4-a716-446655440000"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AuditLogResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
     }
   },
   "components" : {
@@ -1770,6 +2023,24 @@
           }
         },
         "required" : [ "reason" ]
+      },
+      "ChangePasswordRequest" : {
+        "type" : "object",
+        "properties" : {
+          "currentPassword" : {
+            "type" : "string",
+            "description" : "Current account password.",
+            "example" : "correctHorseBatteryStaple",
+            "minLength" : 1
+          },
+          "newPassword" : {
+            "type" : "string",
+            "description" : "New password with a minimum length of 8 characters.",
+            "example" : "newCorrectHorseBatteryStaple",
+            "minLength" : 8
+          }
+        },
+        "required" : [ "currentPassword", "newPassword" ]
       },
       "AuditoriumRequest" : {
         "type" : "object",
@@ -2095,6 +2366,31 @@
         },
         "required" : [ "email", "password" ]
       },
+      "CreateAdminRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "description" : "Nonblank email address for the new admin account.",
+            "example" : "ops-admin@cinema.local",
+            "minLength" : 1
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Password with a minimum length of 8 characters.",
+            "example" : "correctHorseBatteryStaple",
+            "minLength" : 8
+          },
+          "fullName" : {
+            "type" : "string",
+            "description" : "Admin's nonblank full name.",
+            "example" : "Operations Admin",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "email", "fullName", "password" ]
+      },
       "SeatMapResponse" : {
         "type" : "object",
         "properties" : {
@@ -2136,6 +2432,52 @@
             "description" : "Availability status.",
             "enum" : [ "AVAILABLE", "HELD", "SOLD" ],
             "example" : "AVAILABLE"
+          }
+        }
+      },
+      "AuditLogResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Audit log entry identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440099"
+          },
+          "actorId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Acting admin account identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "action" : {
+            "type" : "string",
+            "description" : "Audited administrative action.",
+            "enum" : [ "ADMIN_CREATED", "ADMIN_PASSWORD_CHANGED", "SHOWTIME_CREATED", "SHOWTIME_CANCELLED", "SHOWTIME_DELETED", "CINEMA_CREATED", "CINEMA_UPDATED", "CINEMA_DELETED", "AUDITORIUM_CREATED", "AUDITORIUM_DELETED", "MOVIE_CREATED", "MOVIE_UPDATED", "MOVIE_DELETED" ],
+            "example" : "SHOWTIME_CANCELLED"
+          },
+          "targetType" : {
+            "type" : "string",
+            "description" : "Target domain resource type.",
+            "enum" : [ "ACCOUNT", "SHOWTIME", "CINEMA", "AUDITORIUM", "MOVIE" ],
+            "example" : "SHOWTIME"
+          },
+          "targetId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Target domain resource identifier.",
+            "example" : "550e8400-e29b-41d4-a716-446655440010"
+          },
+          "details" : {
+            "type" : "object",
+            "additionalProperties" : { },
+            "description" : "Structured action metadata captured at the time of the operation."
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Timestamp when the audited action was recorded.",
+            "example" : "2026-05-01T12:00:00Z"
           }
         }
       },
