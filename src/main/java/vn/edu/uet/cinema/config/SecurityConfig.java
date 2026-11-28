@@ -36,6 +36,8 @@ import org.springframework.security.oauth2.server.resource.web.authentication.Be
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 import vn.edu.uet.cinema.business.account.InMemoryTokenBlacklist;
 import vn.edu.uet.cinema.business.account.PasswordHasher;
 import vn.edu.uet.cinema.business.account.TokenBlacklist;
@@ -124,6 +126,14 @@ public class SecurityConfig {
 		FilterRegistrationBean<RateLimitingFilter> registration = new FilterRegistrationBean<>(filter);
 		registration.setEnabled(false);
 		return registration;
+	}
+
+	/** Lets undeclared HTTP methods (e.g. QUERY) reach Spring MVC so it responds with 405 Method Not Allowed and Allow. */
+	@Bean
+	HttpFirewall httpFirewall() {
+		StrictHttpFirewall firewall = new StrictHttpFirewall();
+		firewall.setUnsafeAllowAnyHttpMethod(true);
+		return firewall;
 	}
 
 	@Bean

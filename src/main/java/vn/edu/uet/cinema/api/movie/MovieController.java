@@ -63,11 +63,11 @@ class MovieController {
 		+ "This read is public; a supplied invalid bearer token is rejected.")
 	ResponseEntity<List<MovieResponse>> list(
 		@Parameter(description = "Zero-based page index.", example = "0",
-			schema = @Schema(minimum = "0", maximum = "100000", defaultValue = "0"))
+			schema = @Schema(type = "integer", minimum = "0", maximum = "100000", defaultValue = "0"))
 		@RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be 0 or greater")
 		@Max(value = PageQuery.MAX_PAGE, message = "Page must be at most 100000") int page,
-		@Parameter(description = "Maximum number of items per page (1–100).", example = "20",
-			schema = @Schema(minimum = "1", maximum = "100", defaultValue = "20"))
+		@Parameter(description = "Maximum number of items per page (1-100).", example = "20",
+			schema = @Schema(type = "integer", minimum = "1", maximum = "100", defaultValue = "20"))
 		@RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1")
 		@Max(value = PageQuery.MAX_SIZE, message = "Size must be at most 100") int size) {
 		return PaginationHeaders.ok(movies.list(new PageQuery(page, size)), MovieResponse::from);

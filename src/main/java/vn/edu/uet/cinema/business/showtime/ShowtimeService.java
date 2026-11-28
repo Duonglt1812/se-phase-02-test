@@ -161,12 +161,12 @@ public class ShowtimeService {
 
 	/** Cancels the Showtime and records an atomic audit entry when {@code actorId} is non-null (S4). */
 	public Showtime cancel(UUID actorId, UUID id, CancellationReason reason, String note, Instant now) {
+		if (note != null && note.length() > MAX_NOTE_LENGTH) {
+			throw new InvalidShowtimeException("A cancellation note has at most " + MAX_NOTE_LENGTH + " characters");
+		}
 		String given = note == null || note.isBlank() ? null : note;
 		if (reason == CancellationReason.OTHER && given == null) {
 			throw new InvalidShowtimeException("A Cancellation Reason of Other needs a note");
-		}
-		if (given != null && given.length() > MAX_NOTE_LENGTH) {
-			throw new InvalidShowtimeException("A cancellation note has at most " + MAX_NOTE_LENGTH + " characters");
 		}
 		Cancellation cancellation = new Cancellation(reason, given);
 		CancelOutcome outcome = actorId == null

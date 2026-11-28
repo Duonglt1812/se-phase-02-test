@@ -47,7 +47,7 @@ class BookingController {
 	}
 
 	@PostMapping("/api/bookings")
-	@Operation(summary = "Book seats", description = "Creates a 10-minute Pending hold for 1–8 unique seats in a future, "
+	@Operation(summary = "Book seats", description = "Creates a 10-minute Pending hold for 1-8 unique seats in a future, "
 		+ "non-cancelled showtime. Customers can have at most one live Pending booking; taken seats, cancelled/started "
 		+ "showtimes, or an existing hold cause 409. Duplicate IDs or seats outside its auditorium are 400; an unknown "
 		+ "showtime is 404. Requires CUSTOMER.")
@@ -68,11 +68,11 @@ class BookingController {
 	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 	ResponseEntity<List<BookingResponse>> list(@AuthenticationPrincipal Jwt jwt,
 		@Parameter(description = "Zero-based page index.", example = "0",
-			schema = @Schema(minimum = "0", maximum = "100000", defaultValue = "0"))
+			schema = @Schema(type = "integer", minimum = "0", maximum = "100000", defaultValue = "0"))
 		@RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be 0 or greater")
 		@Max(value = PageQuery.MAX_PAGE, message = "Page must be at most 100000") int page,
-		@Parameter(description = "Maximum number of items per page (1–100).", example = "20",
-			schema = @Schema(minimum = "1", maximum = "100", defaultValue = "20"))
+		@Parameter(description = "Maximum number of items per page (1-100).", example = "20",
+			schema = @Schema(type = "integer", minimum = "1", maximum = "100", defaultValue = "20"))
 		@RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1")
 		@Max(value = PageQuery.MAX_SIZE, message = "Size must be at most 100") int size) {
 		Instant now = Instant.now();
@@ -102,7 +102,7 @@ class BookingController {
 	BookingResponse pay(@AuthenticationPrincipal Jwt jwt,
 		@Parameter(description = "Booking UUID owned by the authenticated customer.",
 			example = "550e8400-e29b-41d4-a716-446655440030") @PathVariable UUID id,
-		@Parameter(description = "Optional client-generated idempotency key (1–128 characters) to safely retry payment.",
+		@Parameter(description = "Optional client-generated idempotency key (1-128 characters) to safely retry payment.",
 			example = "pay-550e8400-e29b-41d4-a716-446655440030",
 			schema = @Schema(type = "string", minLength = 1, maxLength = BookingService.MAX_IDEMPOTENCY_KEY_LENGTH))
 		@RequestHeader(value = IDEMPOTENCY_KEY_HEADER, required = false) String idempotencyKey) {
@@ -130,7 +130,7 @@ class BookingController {
 	record BookingRequest(@NotNull(message = "Showtime is required")
 		@Schema(description = "Showtime to book.", example = "550e8400-e29b-41d4-a716-446655440010") UUID showtimeId,
 		@NotNull(message = "Seats are required")
-		@ArraySchema(arraySchema = @Schema(description = "Choose 1–8 unique seat IDs for this showtime.",
+		@ArraySchema(arraySchema = @Schema(description = "Choose 1-8 unique seat IDs for this showtime.",
 			example = "[\"550e8400-e29b-41d4-a716-446655440020\"]"),
 			schema = @Schema(type = "string", format = "uuid", example = "550e8400-e29b-41d4-a716-446655440020"),
 			minItems = 1, maxItems = 8)

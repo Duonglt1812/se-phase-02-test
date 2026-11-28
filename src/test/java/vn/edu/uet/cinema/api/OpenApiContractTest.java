@@ -122,6 +122,40 @@ class OpenApiContractTest {
 	BookingService bookings;
 
 	@Test
+	void committedOpenApiSpecMatchesGeneratedContract() throws Exception {
+		String raw = mvc.perform(get("http://localhost:8080/v3/api-docs")).andExpect(status().isOk())
+			.andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+		tools.jackson.databind.ObjectMapper mapper = new tools.jackson.databind.ObjectMapper();
+		Object tree = mapper.readValue(raw, Object.class);
+		String formatted = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tree) + "\n";
+		java.nio.file.Path specPath = java.nio.file.Path.of("docs/openapi.json");
+		if (Boolean.getBoolean("updateOpenApiSpec")) {
+			java.nio.file.Files.writeString(specPath, formatted, java.nio.charset.StandardCharsets.UTF_8);
+		}
+		String committed = java.nio.file.Files.readString(specPath, java.nio.charset.StandardCharsets.UTF_8);
+		assertThat(committed).doesNotContain("â€").doesNotContain("\ufffd");
+		assertThat(committed.chars().noneMatch(c -> c > 127)).isTrue();
+		assertThat(mapper.readValue(committed, Map.class)).isEqualTo(mapper.readValue(formatted, Map.class));
+		assertThat(JsonPath.<String>read(committed, "$.paths['/api/movies'].get.parameters[0].schema.type"))
+			.isEqualTo("integer");
+		assertThat(JsonPath.<String>read(committed, "$.paths['/api/movies'].get.parameters[1].schema.type"))
+			.isEqualTo("integer");
+		assertThat(JsonPath.<Object>read(committed, "$.components.schemas.CancellationRequest.if")).isNotNull();
+		assertThat(JsonPath.<Object>read(committed, "$.components.schemas.CancellationRequest.then")).isNotNull();
+		assertThat(JsonPath.<Object>read(committed, "$.components.responses.TooManyRequests.headers['Retry-After']"))
+			.isNotNull();
+	}
+
+	@Test
+	void undeclaredHttpMethodReturns405WithAllowHeader() throws Exception {
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request(
+				org.springframework.http.HttpMethod.valueOf("QUERY"), "/api/auth/login"))
+			.andExpect(status().isMethodNotAllowed())
+			.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().exists("Allow"));
+	}
+
+	@Test
 	void yamlSpecificationIsPublic() throws Exception {
 		mvc.perform(get("/v3/api-docs.yaml")).andExpect(status().isOk());
 	}
@@ -168,14 +202,16 @@ class OpenApiContractTest {
 				tags.add(tag.toString());
 			}
 			Map<String, Object> operationResponses = map(operation.get("responses"));
+			Set<String> expectedWithRateLimit = new HashSet<>(expected.getValue());
+			expectedWithRateLimit.add("429");
 			Set<String> actualErrors = operationResponses.keySet().stream().filter(code -> code.startsWith("4"))
 				.collect(java.util.stream.Collectors.toSet());
-			assertThat(actualErrors).as(expected.getKey()).isEqualTo(expected.getValue());
+			assertThat(actualErrors).as(expected.getKey()).isEqualTo(expectedWithRateLimit);
 			assertThat(operationResponses.keySet().stream().filter(code -> code.startsWith("2"))
 				.collect(java.util.stream.Collectors.toSet())).as(expected.getKey())
 				.isEqualTo(Set.of(SUCCESS_RESPONSES.getOrDefault(expected.getKey(), "200")));
 			assertThat(operationResponses.keySet()).noneMatch(code -> code.startsWith("5"));
-			for (String code : expected.getValue()) {
+			for (String code : expectedWithRateLimit) {
 				Map<String, Object> response = resolveResponse(map(operationResponses.get(code)), responses);
 				Map<String, Object> content = map(response.get("content"));
 				assertThat(content).as(expected.getKey() + " " + code).containsKey(PROBLEM);
