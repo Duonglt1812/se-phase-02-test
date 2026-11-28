@@ -1,6 +1,7 @@
 package vn.edu.uet.cinema.api.account;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,17 +10,25 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import vn.edu.uet.cinema.api.PaginationHeaders;
+import vn.edu.uet.cinema.business.PageQuery;
 import vn.edu.uet.cinema.business.account.Account;
 import vn.edu.uet.cinema.business.account.AccountService;
 import vn.edu.uet.cinema.business.account.RefreshTokenService;
@@ -111,6 +120,49 @@ class AccountController {
 		return AccountResponse.from(accounts.get(UUID.fromString(jwt.getSubject())));
 	}
 
+	@PostMapping("/api/me/password")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@Operation(summary = "Change password", description = "Changes the authenticated account's password at runtime without "
+		+ "restarting the service. Requires the current password; newPassword must contain at least 8 characters. "
+		+ "On success, revokes all refresh tokens for the account and blacklists the current access token. "
+		+ "When called by an ADMIN, records an ADMIN_PASSWORD_CHANGED audit entry in the same transaction.")
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
+	void changePassword(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ChangePasswordRequest request) {
+		UUID accountId = UUID.fromString(jwt.getSubject());
+		accounts.changePassword(accountId, request.currentPassword(), request.newPassword(), Instant.now());
+		refreshTokens.revokeAllForAccount(accountId);
+		tokenBlacklist.revoke(SecurityConfig.tokenKey(jwt), jwt.getExpiresAt());
+	}
+
+	@PostMapping("/api/admin/accounts")
+	@ResponseStatus(HttpStatus.CREATED)
+	@Operation(summary = "Create an admin account", description = "Creates a new database-managed ADMIN account and records "
+		+ "an ADMIN_CREATED audit log entry in the same transaction. Email addresses are normalized; an existing email "
+		+ "returns 409. Requires ADMIN.")
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
+	AccountResponse createAdmin(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateAdminRequest request) {
+		UUID actorId = jwt != null ? UUID.fromString(jwt.getSubject()) : null;
+		return AccountResponse.from(accounts.createAdmin(actorId, request.email(), request.password(),
+			request.fullName(), Instant.now()));
+	}
+
+	@GetMapping("/api/admin/accounts")
+	@Operation(summary = "List admin accounts", description = "Returns a page of database-managed ADMIN accounts ordered by "
+		+ "email. Defaults to page=0 and size=20 (max 100); totals are returned in X-Total-Count, X-Page, X-Page-Size, "
+		+ "and X-Total-Pages headers. Requires ADMIN.")
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
+	ResponseEntity<List<AccountResponse>> listAdmins(
+		@Parameter(description = "Zero-based page index.", example = "0",
+			schema = @Schema(minimum = "0", maximum = "100000", defaultValue = "0"))
+		@RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be 0 or greater")
+		@Max(value = PageQuery.MAX_PAGE, message = "Page must be at most 100000") int page,
+		@Parameter(description = "Maximum number of items per page (1-100).", example = "20",
+			schema = @Schema(minimum = "1", maximum = "100", defaultValue = "20"))
+		@RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1")
+		@Max(value = PageQuery.MAX_SIZE, message = "Size must be at most 100") int size) {
+		return PaginationHeaders.ok(accounts.listAdmins(new PageQuery(page, size)), AccountResponse::from);
+	}
+
 	// BCrypt only reads the first 72 bytes of a password.
 	@Schema(name = "RegisterRequest")
 	record RegisterRequest(@NotBlank(message = "Email is required") @Email(message = "Email must be valid")
@@ -123,6 +175,30 @@ class AccountController {
 			example = "correctHorseBatteryStaple") String password,
 		@NotBlank(message = "Full name is required") @Size(max = 255, message = "Full name is not allowed")
 		@Schema(description = "Customer's nonblank full name.", minLength = 1, example = "Alice Nguyen") String fullName) {
+	}
+
+	@Schema(name = "CreateAdminRequest")
+	record CreateAdminRequest(@NotBlank(message = "Email is required") @Email(message = "Email must be valid")
+		@Size(max = 255, message = "Email is not allowed")
+		@Schema(description = "Nonblank email address for the new admin account.", minLength = 1,
+			example = "ops-admin@cinema.local") String email,
+		@NotBlank(message = "Password is required")
+		@Size(min = 8, message = "Password must be at least 8 characters") @RegistrationPasswordLimit
+		@Schema(description = "Password with a minimum length of 8 characters.", minLength = 8,
+			example = "correctHorseBatteryStaple") String password,
+		@NotBlank(message = "Full name is required") @Size(max = 255, message = "Full name is not allowed")
+		@Schema(description = "Admin's nonblank full name.", minLength = 1, example = "Operations Admin") String fullName) {
+	}
+
+	@Schema(name = "ChangePasswordRequest")
+	record ChangePasswordRequest(
+		@NotBlank(message = "Current password is required")
+		@Schema(description = "Current account password.", minLength = 1,
+			example = "correctHorseBatteryStaple") String currentPassword,
+		@NotBlank(message = "New password is required")
+		@Size(min = 8, message = "Password must be at least 8 characters") @RegistrationPasswordLimit
+		@Schema(description = "New password with a minimum length of 8 characters.", minLength = 8,
+			example = "newCorrectHorseBatteryStaple") String newPassword) {
 	}
 
 	record LoginRequest(@NotBlank @Schema(description = "Registered email address.", minLength = 1,

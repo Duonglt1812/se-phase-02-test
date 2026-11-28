@@ -27,9 +27,9 @@ class MigrationIntegrityTest {
 				.toList();
 		}
 
-		assertThat(versions).hasSize(14);
+		assertThat(versions).hasSize(15);
 		assertThat(versions).doesNotHaveDuplicates();
-		assertThat(versions).containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+		assertThat(versions).containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
 	}
 
 	@Test
@@ -66,5 +66,19 @@ class MigrationIntegrityTest {
 			.contains("ix_refresh_token_account_id")
 			.contains("ix_refresh_token_family_id")
 			.contains("ix_refresh_token_expires_at");
+	}
+
+	@Test
+	void v15CreatesAppendOnlyAuditLogTableWithIndexesAndTrigger() throws Exception {
+		String sql = Files.readString(Path.of("src/main/resources/db/migration/V15__create_audit_log.sql"));
+
+		assertThat(sql)
+			.contains("CREATE TABLE audit_log")
+			.contains("fk_audit_log_actor")
+			.contains("ix_audit_log_created_at_id")
+			.contains("ix_audit_log_target")
+			.contains("ix_audit_log_actor_id")
+			.contains("prevent_audit_log_mutation")
+			.contains("trg_audit_log_append_only");
 	}
 }

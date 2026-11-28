@@ -37,8 +37,8 @@ The service reads its configuration from environment variables. Secrets have no 
 | `JWT_SECRET` | ✓ | | HS256 signing key, at least 32 bytes (`openssl rand -base64 32`) |
 | `JWT_ACCESS_TOKEN_TTL` | | `15m` | Short-lived access JWT lifetime (Spring duration) |
 | `JWT_REFRESH_TOKEN_TTL` | | `7d` | Rotating refresh token lifetime (Spring duration) |
-| `ADMIN_EMAIL` | | `admin@cinema.local` | The Admin account, created at startup if missing |
-| `ADMIN_PASSWORD` | ✓ | | The Admin's password, reset at every startup; change it and restart to rotate |
+| `ADMIN_EMAIL` | | `admin@cinema.local` | Initial bootstrap Admin account, seeded at startup if missing |
+| `ADMIN_PASSWORD` | ✓ | | Initial password used when seeding the bootstrap Admin; ongoing password rotation uses `POST /api/me/password` without restarting, and additional Admins are created via `POST /api/admin/accounts` |
 
 Without `JWT_SECRET` or `ADMIN_PASSWORD` the app refuses to start. Without `DB_PASSWORD` it fails to connect to the database. Docker Compose checks all three before it starts anything.
 
