@@ -2,6 +2,7 @@ package vn.edu.uet.cinema.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -41,7 +42,7 @@ class RateLimitingFilterTest {
 
 		filter.doFilter(request, response, chain);
 
-		verify(chain, times(1)).doFilter(request, response);
+		verify(chain, times(1)).doFilter(any(HttpServletRequest.class), eq(response));
 		assertThat(response.getStatus()).isEqualTo(200);
 	}
 
@@ -75,9 +76,9 @@ class RateLimitingFilterTest {
 			.contains("\"title\":\"Too Many Requests\"");
 
 		// Verify chain was only invoked for the first 2 allowed requests
-		verify(chain, times(1)).doFilter(req1, res1);
-		verify(chain, times(1)).doFilter(req2, res2);
-		verify(chain, never()).doFilter(req3, res3);
+		verify(chain, times(1)).doFilter(any(HttpServletRequest.class), eq(res1));
+		verify(chain, times(1)).doFilter(any(HttpServletRequest.class), eq(res2));
+		verify(chain, never()).doFilter(any(HttpServletRequest.class), eq(res3));
 	}
 
 	@Test
