@@ -28,6 +28,7 @@ import vn.edu.uet.cinema.business.audit.AuditLog;
 import vn.edu.uet.cinema.business.audit.AuditLogRepository;
 import vn.edu.uet.cinema.business.audit.AuditTargetType;
 import vn.edu.uet.cinema.business.showtime.inventory.AbandonOutcome;
+import vn.edu.uet.cinema.business.showtime.inventory.BookedSeat;
 import vn.edu.uet.cinema.business.showtime.inventory.Booking;
 import vn.edu.uet.cinema.business.showtime.inventory.BookingStatus;
 import vn.edu.uet.cinema.business.showtime.inventory.CancelOutcome;
@@ -64,8 +65,8 @@ public class JpaSeatInventory implements SeatInventory {
 			SELECT seat_id, price FROM booked_seat WHERE booking_id = ?
 		),
 		ins_tx AS (
-			INSERT INTO payment_transaction (id, booking_id, customer_id, type, status, amount, idempotency_key, created_at)
-			SELECT ?, u.id, u.customer_id, 'PAYMENT', 'COMPLETED', coalesce((SELECT sum(price) FROM seats), 0), cast(? as text), ?
+			INSERT INTO payment_transaction (id, booking_id, customer_id, type, status, amount, idempotency_key, created_at, updated_at)
+			SELECT ?, u.id, u.customer_id, 'PAYMENT', 'COMPLETED', coalesce((SELECT sum(price) FROM seats), 0), cast(? as text), ?, ?
 			FROM updated u
 		)
 		SELECT u.id, u.customer_id, u.showtime_id, u.created_at, u.expires_at, s.seat_id, s.price
@@ -274,6 +275,7 @@ public class JpaSeatInventory implements SeatInventory {
 								.param(5, txId)
 								.param(6, idempotencyKey)
 								.param(7, nowOffset)
+								.param(8, nowOffset)
 								.query(JpaSeatInventory::mapPaidBookingRow)
 								.list());
 
@@ -437,6 +439,7 @@ public class JpaSeatInventory implements SeatInventory {
 					.param(1, showtimeId)
 					.param(2, OffsetDateTime.ofInstant(now, ZoneOffset.UTC))
 					.query(JpaSeatInventory::mapOccupiedSeat)
+					.list()
 					.forEach(row -> map.put(row.seatId(),
 						"PENDING".equals(row.status()) ? SeatStatus.HELD : SeatStatus.SOLD));
 				return map;

@@ -97,7 +97,7 @@ class SeatInventoryHotPathTest {
 
 		PayOutcome outcome = inventory.pay(customerId, pending.id(), now, key);
 		assertThat(outcome).isInstanceOf(PayOutcome.Paid.class);
-		Booking confirmed = ((PayOutcome.Paid) outcome).booking();
+		Booking confirmed = ((PayOutcome.Paid) outcome).confirmed();
 		assertThat(confirmed.status()).isEqualTo(BookingStatus.CONFIRMED);
 		assertThat(confirmed.totalPrice()).isEqualTo(100_000L);
 
